@@ -15,8 +15,7 @@ export function Weapon() {
     updateScore, 
     ammo, 
     isReloading, 
-    startReload, 
-    finishReload,
+    startReload,
     useAmmo 
   } = useGameStore();
   
@@ -48,9 +47,27 @@ export function Weapon() {
     }
   });
 
+  const handleShoot = useCallback((position: THREE.Vector3, direction: THREE.Vector3) => {
+    if (bulletSystem.current) {
+      bulletSystem.current.createBullet(
+        position,
+        direction,
+        300,
+        weather,
+        activeWeapon,
+        (hitPoint: THREE.Vector3, droneId: string) => {
+          shootDrone(droneId);
+          updateScore(Math.floor(hitPoint.distanceTo(camera.position)));
+        }
+      );
+    }
+  }, [weather, activeWeapon, shootDrone, updateScore, camera]);
+
   const shoot = useCallback(() => {
     if (isShooting.current || ammo <= 0 || isReloading || !bulletSystem.current) {
-      if (ammo <= 0) reload();
+      if (ammo <= 0) {
+        startReload();
+      }
       return;
     }
 
@@ -60,7 +77,7 @@ export function Weapon() {
     lastShootTime.current = now;
     isShooting.current = true;
 
-    // Decrease ammo
+    // Decrease ammo first
     useAmmo();
 
     // Show muzzle flash
@@ -81,18 +98,10 @@ export function Weapon() {
     const direction = new THREE.Vector3();
     camera.getWorldDirection(direction);
     
-    // Create bullet
-    bulletSystem.current.createBullet(
+    // Create bullet with separated logic
+    handleShoot(
       camera.position.clone().add(direction.multiplyScalar(2)),
-      direction.normalize(),
-      300,
-      weather,
-      activeWeapon,
-      (hitPoint: THREE.Vector3, droneId: string) => {
-        console.log('Bullet hit drone:', droneId);
-        shootDrone(droneId);
-        updateScore(Math.floor(hitPoint.distanceTo(camera.position)));
-      }
+      direction.normalize()
     );
 
     // Reset camera position
@@ -100,7 +109,7 @@ export function Weapon() {
       camera.position.copy(originalPosition);
       isShooting.current = false;
     }, 50);
-  }, [ammo, isReloading, camera, weather, activeWeapon, useAmmo, shootDrone, updateScore]);
+  }, [ammo, isReloading, camera, handleShoot, useAmmo, startReload]);
 
   const reload = useCallback(() => {
     if (isReloading || ammo === activeWeapon.ammoCapacity) return;
@@ -125,7 +134,7 @@ export function Weapon() {
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [shoot, reload]);
+  }, [shoot, reload, isReloading, ammo, activeWeapon.ammoCapacity]);
 
   return null;
 }
