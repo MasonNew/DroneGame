@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useGameStore } from '../store';
 import * as THREE from 'three';
@@ -16,13 +16,12 @@ export function Weapon() {
     ammo, 
     isReloading, 
     startReload,
-    useAmmo 
+    handleShot 
   } = useGameStore();
   
   const bulletSystem = useRef<BulletSystem>();
   const lastShootTime = useRef(0);
   const muzzleFlash = useRef<THREE.PointLight>();
-  const [isShootingState, setIsShootingState] = useState(false);
 
   // Initialize systems
   useEffect(() => {
@@ -47,15 +46,7 @@ export function Weapon() {
     }
   });
 
-  // Handle ammo usage at the top level
-  useEffect(() => {
-    if (isShootingState && ammo > 0 && !isReloading) {
-      useAmmo();
-      setIsShootingState(false);
-    }
-  }, [isShootingState, ammo, isReloading, useAmmo]);
-
-  const handleShoot = useCallback((position: THREE.Vector3, direction: THREE.Vector3) => {
+  const createBullet = useCallback((position: THREE.Vector3, direction: THREE.Vector3) => {
     if (bulletSystem.current) {
       bulletSystem.current.createBullet(
         position,
@@ -71,39 +62,19 @@ export function Weapon() {
     }
   }, [weather, activeWeapon, shootDrone, updateScore, camera]);
 
-  const performShot = useCallback(() => {
+  const performVisualEffects = useCallback((position: THREE.Vector3) => {
     // Show muzzle flash
     if (muzzleFlash.current) {
-      muzzleFlash.current.position.copy(camera.position).add(new THREE.Vector3(0, -0.1, -0.5));
+      muzzleFlash.current.position.copy(position).add(new THREE.Vector3(0, -0.1, -0.5));
       muzzleFlash.current.visible = true;
       setTimeout(() => {
         if (muzzleFlash.current) muzzleFlash.current.visible = false;
       }, 50);
     }
-
-    // Apply screen shake
-    const originalPosition = camera.position.clone();
-    camera.position.y += Math.random() * 0.03 - 0.015;
-    camera.position.x += Math.random() * 0.03 - 0.015;
-
-    // Get direction from camera
-    const direction = new THREE.Vector3();
-    camera.getWorldDirection(direction);
-    
-    // Create bullet with separated logic
-    handleShoot(
-      camera.position.clone().add(direction.multiplyScalar(2)),
-      direction.normalize()
-    );
-
-    // Reset camera position
-    setTimeout(() => {
-      camera.position.copy(originalPosition);
-    }, 50);
-  }, [camera, handleShoot]);
+  }, []);
 
   const shoot = useCallback(() => {
-    if (isShootingState || ammo <= 0 || isReloading || !bulletSystem.current) {
+    if (ammo <= 0 || isReloading || !bulletSystem.current) {
       if (ammo <= 0) {
         startReload();
       }
@@ -114,9 +85,31 @@ export function Weapon() {
     if (now - lastShootTime.current < 500) return;
 
     lastShootTime.current = now;
-    setIsShootingState(true);
-    performShot();
-  }, [ammo, isReloading, performShot, startReload, isShootingState]);
+
+    // Apply screen shake
+    const originalPosition = camera.position.clone();
+    camera.position.y += Math.random() * 0.03 - 0.015;
+    camera.position.x += Math.random() * 0.03 - 0.015;
+
+    // Get direction from camera
+    const direction = new THREE.Vector3();
+    camera.getWorldDirection(direction);
+    
+    // Show visual effects
+    performVisualEffects(camera.position);
+
+    // Create bullet and handle ammo usage
+    createBullet(
+      camera.position.clone().add(direction.multiplyScalar(2)),
+      direction.normalize()
+    );
+    handleShot();
+
+    // Reset camera position
+    setTimeout(() => {
+      camera.position.copy(originalPosition);
+    }, 50);
+  }, [ammo, isReloading, camera, createBullet, handleShot, startReload, performVisualEffects]);
 
   const reload = useCallback(() => {
     if (isReloading || ammo === activeWeapon.ammoCapacity) return;
@@ -141,7 +134,7 @@ export function Weapon() {
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [shoot, reload, isReloading, ammo, activeWeapon.ammoCapacity]);
+  }, [shoot, reload]);
 
   return null;
 }
