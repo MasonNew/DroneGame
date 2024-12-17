@@ -118,7 +118,7 @@ export function FloatingItems() {
     }
 
     // Update items
-    setItems(updateItems);
+    setItems(prevItems => updateItems(prevItems));
   });
 
   if (!textureRef.current || !glowMaterialRef.current) return null;

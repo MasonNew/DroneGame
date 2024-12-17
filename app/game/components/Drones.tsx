@@ -175,17 +175,14 @@ export function Drones() {
     });
   });
 
+  // Initialize with a few drones
   useEffect(() => {
-    // Initial spawn
-    for (let i = 0; i < initialDroneCount; i++) {
+    // Spawn initial drones
+    const initialCount = 5;
+    for (let i = 0; i < initialCount; i++) {
       spawnNewDrone();
     }
-
-    // Set up interval for continuous spawning
-    const spawnInterval = setInterval(spawnNewDrone, spawnRate);
-
-    return () => clearInterval(spawnInterval);
-  }, [spawnNewDrone, initialDroneCount, spawnRate]);
+  }, [spawnNewDrone]);
 
   return (
     <group>

@@ -6,6 +6,8 @@ import { useGameStore } from '../store';
 import * as THREE from 'three';
 import { BulletSystem } from './weapon/BulletSystem';
 
+const RELOAD_TIME = 2000; // 2 seconds reload time
+
 export function Weapon() {
   const { camera, scene } = useThree();
   const { 
@@ -140,11 +142,11 @@ export function Weapon() {
     if (isReloading && ammo < activeWeapon.ammoCapacity) {
       const reloadTimer = setTimeout(() => {
         startReload();
-      }, reloadTime);
+      }, RELOAD_TIME);
 
       return () => clearTimeout(reloadTimer);
     }
-  }, [isReloading, ammo, activeWeapon.ammoCapacity, reloadTime]);
+  }, [isReloading, ammo, activeWeapon.ammoCapacity, startReload]);
 
   return null;
 }
