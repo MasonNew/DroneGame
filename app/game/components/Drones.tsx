@@ -18,7 +18,7 @@ export function Drones() {
   // Initialize and spawn first drone
   useEffect(() => {
     spawnNewDrone();
-  }, []);
+  }, [spawnDrone]);
 
   const destroyDrone = (droneId: string) => {
     console.log('Destroying drone:', droneId);

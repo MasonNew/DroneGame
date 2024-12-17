@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useGameStore } from '../store';
 import * as THREE from 'three';
@@ -48,7 +48,7 @@ export function Weapon() {
     }
   });
 
-  const shoot = () => {
+  const shoot = useCallback(() => {
     if (isShooting.current || ammo <= 0 || isReloading || !bulletSystem.current) {
       if (ammo <= 0) reload();
       return;
@@ -100,12 +100,12 @@ export function Weapon() {
       camera.position.copy(originalPosition);
       isShooting.current = false;
     }, 50);
-  };
+  }, [ammo, isReloading, camera, weather, activeWeapon, useAmmo, shootDrone, updateScore]);
 
-  const reload = () => {
+  const reload = useCallback(() => {
     if (isReloading || ammo === activeWeapon.ammoCapacity) return;
     startReload();
-  };
+  }, [isReloading, ammo, activeWeapon.ammoCapacity, startReload]);
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -125,7 +125,7 @@ export function Weapon() {
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [camera, scene, weather, activeWeapon, ammo, isReloading]);
+  }, [shoot, reload]);
 
   return null;
 }
