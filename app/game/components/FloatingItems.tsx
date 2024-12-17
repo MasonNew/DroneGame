@@ -13,6 +13,11 @@ interface FloatingItem {
   phase: number;
 }
 
+interface GlowUniforms {
+  glowColor: { value: THREE.Color };
+  viewVector: { value: THREE.Vector3 };
+}
+
 export function FloatingItems() {
   const [items, setItems] = useState<FloatingItem[]>([]);
   const textureRef = useRef<THREE.Texture | null>(null);
@@ -49,19 +54,19 @@ export function FloatingItems() {
       setItems(newItems);
     });
 
-    // Create glow shader material with stronger glow
+    // Create glow shader material
     const glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         glowColor: { value: new THREE.Color(0x00ffff) },
         viewVector: { value: new THREE.Vector3() }
-      },
+      } as GlowUniforms,
       vertexShader: `
         uniform vec3 viewVector;
         varying float intensity;
         void main() {
           vec3 vNormal = normalize(normalMatrix * normal);
           vec3 vNormel = normalize(normalMatrix * viewVector);
-          intensity = pow(0.8 - dot(vNormal, vNormel), 2.0);  // Increased base intensity
+          intensity = pow(0.8 - dot(vNormal, vNormel), 2.0);
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
@@ -70,13 +75,13 @@ export function FloatingItems() {
         varying float intensity;
         void main() {
           vec3 glow = glowColor * intensity;
-          gl_FragColor = vec4(glow, min(intensity, 0.8));  // Adjusted opacity
+          gl_FragColor = vec4(glow, min(intensity, 0.8));
         }
       `,
       side: THREE.FrontSide,
       blending: THREE.AdditiveBlending,
       transparent: true,
-      depthWrite: false  // Added to prevent glow from being occluded
+      depthWrite: false
     });
 
     glowMaterialRef.current = glowMaterial;
@@ -92,22 +97,20 @@ export function FloatingItems() {
   }, []);
 
   // Animate items
-  useFrame((state, delta) => {
+  useFrame((state) => {
     const camera = state.camera;
     
     // Update glow effect view vector
     if (glowMaterialRef.current) {
-      glowMaterialRef.current.uniforms.viewVector.value = new THREE.Vector3().subVectors(
-        camera.position,
-        new THREE.Vector3(0, 0, 0)
-      );
+      const uniforms = glowMaterialRef.current.uniforms as GlowUniforms;
+      uniforms.viewVector.value.copy(camera.position);
     }
 
     // Update items
     setItems(prevItems => 
       prevItems.map(item => ({
         ...item,
-        phase: (item.phase + delta * item.floatSpeed) % (Math.PI * 2)
+        phase: (item.phase + 0.016 * item.floatSpeed) % (Math.PI * 2)
       }))
     );
   });
@@ -132,8 +135,8 @@ export function FloatingItems() {
               map={textureRef.current}
               transparent={true}
               opacity={0.9}
-              depthWrite={false}  // Added to prevent sprite from being occluded
-              sizeAttenuation={true}  // Makes the sprite maintain size regardless of distance
+              depthWrite={false}
+              sizeAttenuation={true}
             />
           </sprite>
 
