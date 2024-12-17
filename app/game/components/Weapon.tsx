@@ -63,23 +63,7 @@ export function Weapon() {
     }
   }, [weather, activeWeapon, shootDrone, updateScore, camera]);
 
-  const shoot = useCallback(() => {
-    if (isShooting.current || ammo <= 0 || isReloading || !bulletSystem.current) {
-      if (ammo <= 0) {
-        startReload();
-      }
-      return;
-    }
-
-    const now = Date.now();
-    if (now - lastShootTime.current < 500) return;
-
-    lastShootTime.current = now;
-    isShooting.current = true;
-
-    // Decrease ammo first
-    useAmmo();
-
+  const performShot = useCallback(() => {
     // Show muzzle flash
     if (muzzleFlash.current) {
       muzzleFlash.current.position.copy(camera.position).add(new THREE.Vector3(0, -0.1, -0.5));
@@ -109,7 +93,30 @@ export function Weapon() {
       camera.position.copy(originalPosition);
       isShooting.current = false;
     }, 50);
-  }, [ammo, isReloading, camera, handleShoot, useAmmo, startReload]);
+  }, [camera, handleShoot]);
+
+  const shoot = useCallback(() => {
+    if (isShooting.current || ammo <= 0 || isReloading || !bulletSystem.current) {
+      if (ammo <= 0) {
+        startReload();
+      }
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastShootTime.current < 500) return;
+
+    lastShootTime.current = now;
+    isShooting.current = true;
+    performShot();
+  }, [ammo, isReloading, performShot, startReload]);
+
+  // Handle ammo usage at component level
+  useEffect(() => {
+    if (isShooting.current && ammo > 0 && !isReloading) {
+      useAmmo();
+    }
+  }, [isShooting.current, ammo, isReloading, useAmmo]);
 
   const reload = useCallback(() => {
     if (isReloading || ammo === activeWeapon.ammoCapacity) return;
