@@ -136,5 +136,15 @@ export function Weapon() {
     };
   }, [shoot, reload]);
 
+  useEffect(() => {
+    if (isReloading && ammo < activeWeapon.ammoCapacity) {
+      const reloadTimer = setTimeout(() => {
+        startReload();
+      }, reloadTime);
+
+      return () => clearTimeout(reloadTimer);
+    }
+  }, [isReloading, ammo, activeWeapon.ammoCapacity, reloadTime]);
+
   return null;
 }

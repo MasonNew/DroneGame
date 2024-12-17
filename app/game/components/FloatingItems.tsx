@@ -1,7 +1,7 @@
 'use client';
 
 import { useFrame } from '@react-three/fiber';
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import * as THREE from 'three';
 
 interface FloatingItem {
@@ -14,14 +14,33 @@ interface FloatingItem {
 }
 
 interface GlowUniforms {
-  glowColor: { value: THREE.Color };
-  viewVector: { value: THREE.Vector3 };
+  [uniform: string]: THREE.IUniform<any>;
 }
 
 export function FloatingItems() {
   const [items, setItems] = useState<FloatingItem[]>([]);
   const textureRef = useRef<THREE.Texture | null>(null);
   const glowMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+
+  // Create items function
+  const createItems = useCallback((itemCount: number) => {
+    const newItems: FloatingItem[] = [];
+    for (let i = 0; i < itemCount; i++) {
+      newItems.push({
+        id: `item-${i}`,
+        position: new THREE.Vector3(
+          Math.random() * 100 - 50,  // X: -50 to 50
+          20 + Math.random() * 20,   // Y: 20 to 40 (lower for better visibility)
+          Math.random() * 100 - 50   // Z: -50 to 50
+        ),
+        rotationSpeed: 0.5 + Math.random() * 0.5,  // Faster rotation
+        floatSpeed: 1.0 + Math.random() * 0.5,     // Faster floating
+        floatHeight: 1.0 + Math.random() * 0.5,    // Higher float range
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+    return newItems;
+  }, []);
 
   // Initialize items and load texture
   useEffect(() => {
@@ -33,33 +52,17 @@ export function FloatingItems() {
       textureRef.current = texture;
       
       // Create items once texture is loaded
-      const newItems: FloatingItem[] = [];
-      const itemCount = 15; // Increased number of items
-      
-      for (let i = 0; i < itemCount; i++) {
-        newItems.push({
-          id: `item-${i}`,
-          position: new THREE.Vector3(
-            Math.random() * 100 - 50,  // X: -50 to 50
-            20 + Math.random() * 20,   // Y: 20 to 40 (lower for better visibility)
-            Math.random() * 100 - 50   // Z: -50 to 50
-          ),
-          rotationSpeed: 0.5 + Math.random() * 0.5,  // Faster rotation
-          floatSpeed: 1.0 + Math.random() * 0.5,     // Faster floating
-          floatHeight: 1.0 + Math.random() * 0.5,    // Higher float range
-          phase: Math.random() * Math.PI * 2
-        });
-      }
-      
-      setItems(newItems);
+      setItems(createItems(15));
     });
 
     // Create glow shader material
+    const uniforms: GlowUniforms = {
+      glowColor: { value: new THREE.Color(0x00ffff) },
+      viewVector: { value: new THREE.Vector3() }
+    };
+
     const glowMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        glowColor: { value: new THREE.Color(0x00ffff) },
-        viewVector: { value: new THREE.Vector3() }
-      } as GlowUniforms,
+      uniforms,
       vertexShader: `
         uniform vec3 viewVector;
         varying float intensity;
@@ -94,6 +97,14 @@ export function FloatingItems() {
         glowMaterialRef.current.dispose();
       }
     };
+  }, [createItems]);
+
+  // Update item phases
+  const updateItems = useCallback((items: FloatingItem[]) => {
+    return items.map(item => ({
+      ...item,
+      phase: (item.phase + 0.016 * item.floatSpeed) % (Math.PI * 2)
+    }));
   }, []);
 
   // Animate items
@@ -102,17 +113,12 @@ export function FloatingItems() {
     
     // Update glow effect view vector
     if (glowMaterialRef.current) {
-      const uniforms = glowMaterialRef.current.uniforms as GlowUniforms;
+      const uniforms = glowMaterialRef.current.uniforms;
       uniforms.viewVector.value.copy(camera.position);
     }
 
     // Update items
-    setItems(prevItems => 
-      prevItems.map(item => ({
-        ...item,
-        phase: (item.phase + 0.016 * item.floatSpeed) % (Math.PI * 2)
-      }))
-    );
+    setItems(updateItems);
   });
 
   if (!textureRef.current || !glowMaterialRef.current) return null;

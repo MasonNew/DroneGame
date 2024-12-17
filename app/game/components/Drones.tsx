@@ -2,7 +2,7 @@
 
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGameStore } from '../store';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 import { updateDronePosition } from '../utils/dronePatterns';
 import { DroneType } from '../types';
@@ -111,7 +111,7 @@ export function Drones() {
     animate();
   };
 
-  const spawnNewDrone = () => {
+  const spawnNewDrone = useCallback(() => {
     const droneTypes = ['scout', 'combat', 'stealth'] as const;
     const patterns = ['circular', 'linear', 'erratic'] as const;
     
@@ -139,7 +139,7 @@ export function Drones() {
     );
 
     spawnDrone(drone);
-  };
+  }, []);
 
   // Update drone positions and spawn new ones
   useFrame((state, delta) => {
@@ -174,6 +174,18 @@ export function Drones() {
       droneRefs.current[drone.id].position.copy(newPosition);
     });
   });
+
+  useEffect(() => {
+    // Initial spawn
+    for (let i = 0; i < initialDroneCount; i++) {
+      spawnNewDrone();
+    }
+
+    // Set up interval for continuous spawning
+    const spawnInterval = setInterval(spawnNewDrone, spawnRate);
+
+    return () => clearInterval(spawnInterval);
+  }, [spawnNewDrone, initialDroneCount, spawnRate]);
 
   return (
     <group>
