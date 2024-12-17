@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useGameStore } from '../store';
 import * as THREE from 'three';
@@ -20,9 +20,9 @@ export function Weapon() {
   } = useGameStore();
   
   const bulletSystem = useRef<BulletSystem>();
-  const isShooting = useRef(false);
   const lastShootTime = useRef(0);
   const muzzleFlash = useRef<THREE.PointLight>();
+  const [isShootingState, setIsShootingState] = useState(false);
 
   // Initialize systems
   useEffect(() => {
@@ -46,6 +46,14 @@ export function Weapon() {
       bulletSystem.current.update(delta);
     }
   });
+
+  // Handle ammo usage at the top level
+  useEffect(() => {
+    if (isShootingState && ammo > 0 && !isReloading) {
+      useAmmo();
+      setIsShootingState(false);
+    }
+  }, [isShootingState, ammo, isReloading, useAmmo]);
 
   const handleShoot = useCallback((position: THREE.Vector3, direction: THREE.Vector3) => {
     if (bulletSystem.current) {
@@ -91,12 +99,11 @@ export function Weapon() {
     // Reset camera position
     setTimeout(() => {
       camera.position.copy(originalPosition);
-      isShooting.current = false;
     }, 50);
   }, [camera, handleShoot]);
 
   const shoot = useCallback(() => {
-    if (isShooting.current || ammo <= 0 || isReloading || !bulletSystem.current) {
+    if (isShootingState || ammo <= 0 || isReloading || !bulletSystem.current) {
       if (ammo <= 0) {
         startReload();
       }
@@ -107,16 +114,9 @@ export function Weapon() {
     if (now - lastShootTime.current < 500) return;
 
     lastShootTime.current = now;
-    isShooting.current = true;
+    setIsShootingState(true);
     performShot();
-  }, [ammo, isReloading, performShot, startReload]);
-
-  // Handle ammo usage at component level
-  useEffect(() => {
-    if (isShooting.current && ammo > 0 && !isReloading) {
-      useAmmo();
-    }
-  }, [isShooting.current, ammo, isReloading, useAmmo]);
+  }, [ammo, isReloading, performShot, startReload, isShootingState]);
 
   const reload = useCallback(() => {
     if (isReloading || ammo === activeWeapon.ammoCapacity) return;
