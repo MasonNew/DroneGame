@@ -2,7 +2,7 @@
 
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGameStore } from '../store';
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { updateDronePosition } from '../utils/dronePatterns';
 import { DroneType } from '../types';
@@ -18,7 +18,7 @@ export function Drones() {
   // Initialize and spawn first drone
   useEffect(() => {
     spawnNewDrone();
-  }, [spawnDrone]);
+  }, []);
 
   const destroyDrone = (droneId: string) => {
     console.log('Destroying drone:', droneId);
@@ -111,7 +111,7 @@ export function Drones() {
     animate();
   };
 
-  const spawnNewDrone = useCallback(() => {
+  const spawnNewDrone = () => {
     const droneTypes = ['scout', 'combat', 'stealth'] as const;
     const patterns = ['circular', 'linear', 'erratic'] as const;
     
@@ -139,7 +139,7 @@ export function Drones() {
     );
 
     spawnDrone(drone);
-  }, []);
+  };
 
   // Update drone positions and spawn new ones
   useFrame((state, delta) => {
@@ -174,15 +174,6 @@ export function Drones() {
       droneRefs.current[drone.id].position.copy(newPosition);
     });
   });
-
-  // Initialize with a few drones
-  useEffect(() => {
-    // Spawn initial drones
-    const initialCount = 5;
-    for (let i = 0; i < initialCount; i++) {
-      spawnNewDrone();
-    }
-  }, [spawnNewDrone]);
 
   return (
     <group>

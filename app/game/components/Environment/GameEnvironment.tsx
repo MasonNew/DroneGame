@@ -9,11 +9,11 @@ import { Instances, Instance, useGLTF, useTexture } from '@react-three/drei';
 function Trees({ count = 50 }) {
   const positions = useRef(
     Array.from({ length: count }, () => ({
-      position: new THREE.Vector3(
+      position: [
         Math.random() * 200 - 100,
         0,
         Math.random() * 200 - 100
-      ),
+      ],
       scale: 0.8 + Math.random() * 0.4,
       rotation: Math.random() * Math.PI
     }))
@@ -42,11 +42,11 @@ function Trees({ count = 50 }) {
 function Bushes({ count = 100 }) {
   const positions = useRef(
     Array.from({ length: count }, () => ({
-      position: new THREE.Vector3(
+      position: [
         Math.random() * 180 - 90,
         0.5,
         Math.random() * 180 - 90
-      ),
+      ],
       scale: 0.6 + Math.random() * 0.4
     }))
   ).current;
@@ -117,16 +117,16 @@ function Buildings({ count = 30 }) {
       const angle = Math.random() * Math.PI * 2;
       const radius = 30 + Math.random() * 60;
       return {
-        position: new THREE.Vector3(
+        position: [
           Math.cos(angle) * radius,
           0,
           Math.sin(angle) * radius
-        ),
-        scale: new THREE.Vector3(
+        ],
+        scale: [
           10 + Math.random() * 10,
           20 + Math.random() * 30,
           10 + Math.random() * 10
-        ),
+        ],
         rotation: Math.random() * Math.PI * 2,
         windowRows: Math.floor(Math.random() * 3) + 4, // 4-6 rows of windows
         windowCols: Math.floor(Math.random() * 2) + 3  // 3-4 columns of windows
@@ -144,7 +144,7 @@ function Buildings({ count = 30 }) {
         >
           {/* Main building structure */}
           <mesh castShadow receiveShadow>
-            <boxGeometry args={[data.scale.x, data.scale.y, data.scale.z]} />
+            <boxGeometry args={data.scale} />
             <meshStandardMaterial
               color="#666666"
               metalness={0.5}
@@ -155,9 +155,9 @@ function Buildings({ count = 30 }) {
           {/* Collision box - slightly larger than the building */}
           <mesh visible={false} name="building-collider">
             <boxGeometry args={[
-              data.scale.x * 1.1,
-              data.scale.y,
-              data.scale.z * 1.1
+              data.scale[0] * 1.1,
+              data.scale[1],
+              data.scale[2] * 1.1
             ]} />
           </mesh>
 
@@ -167,14 +167,14 @@ function Buildings({ count = 30 }) {
               <group
                 key={`front-${row}-${col}`}
                 position={[
-                  (col - (data.windowCols - 1) / 2) * (data.scale.x * 0.2),
-                  (row - data.windowRows / 2) * (data.scale.y * 0.15) + data.scale.y * 0.3,
-                  data.scale.z / 2 + 0.1
+                  (col - (data.windowCols - 1) / 2) * (data.scale[0] * 0.2),
+                  (row - data.windowRows / 2) * (data.scale[1] * 0.15) + data.scale[1] * 0.3,
+                  data.scale[2] / 2 + 0.1
                 ]}
               >
                 {/* Window frame */}
                 <mesh castShadow>
-                  <boxGeometry args={[data.scale.x * 0.15, data.scale.y * 0.12, 0.2]} />
+                  <boxGeometry args={[data.scale[0] * 0.15, data.scale[1] * 0.12, 0.2]} />
                   <meshStandardMaterial
                     color="#333333"
                     metalness={0.8}
@@ -183,7 +183,7 @@ function Buildings({ count = 30 }) {
                 </mesh>
                 {/* Window glass */}
                 <mesh>
-                  <boxGeometry args={[data.scale.x * 0.13, data.scale.y * 0.1, 0.1]} />
+                  <boxGeometry args={[data.scale[0] * 0.13, data.scale[1] * 0.1, 0.1]} />
                   <meshPhysicalMaterial
                     color="#88ccff"
                     metalness={0.9}
@@ -210,13 +210,13 @@ function Buildings({ count = 30 }) {
               <group
                 key={`back-${row}-${col}`}
                 position={[
-                  (col - (data.windowCols - 1) / 2) * (data.scale.x * 0.2),
-                  (row - data.windowRows / 2) * (data.scale.y * 0.15) + data.scale.y * 0.3,
-                  -data.scale.z / 2 - 0.1
+                  (col - (data.windowCols - 1) / 2) * (data.scale[0] * 0.2),
+                  (row - data.windowRows / 2) * (data.scale[1] * 0.15) + data.scale[1] * 0.3,
+                  -data.scale[2] / 2 - 0.1
                 ]}
               >
                 <mesh castShadow>
-                  <boxGeometry args={[data.scale.x * 0.15, data.scale.y * 0.12, 0.2]} />
+                  <boxGeometry args={[data.scale[0] * 0.15, data.scale[1] * 0.12, 0.2]} />
                   <meshStandardMaterial
                     color="#333333"
                     metalness={0.8}
@@ -224,7 +224,7 @@ function Buildings({ count = 30 }) {
                   />
                 </mesh>
                 <mesh>
-                  <boxGeometry args={[data.scale.x * 0.13, data.scale.y * 0.1, 0.1]} />
+                  <boxGeometry args={[data.scale[0] * 0.13, data.scale[1] * 0.1, 0.1]} />
                   <meshPhysicalMaterial
                     color="#88ccff"
                     metalness={0.9}
@@ -247,10 +247,10 @@ function Buildings({ count = 30 }) {
           {/* Building details */}
           {/* Roof edge */}
           <mesh
-            position={[0, data.scale.y / 2 + 0.2, 0]}
+            position={[0, data.scale[1] / 2 + 0.2, 0]}
             castShadow
           >
-            <boxGeometry args={[data.scale.x * 1.1, 0.4, data.scale.z * 1.1]} />
+            <boxGeometry args={[data.scale[0] * 1.1, 0.4, data.scale[2] * 1.1]} />
             <meshStandardMaterial
               color="#444444"
               metalness={0.7}
@@ -260,10 +260,10 @@ function Buildings({ count = 30 }) {
 
           {/* Base/Foundation */}
           <mesh
-            position={[0, -data.scale.y / 2 + 0.2, 0]}
+            position={[0, -data.scale[1] / 2 + 0.2, 0]}
             receiveShadow
           >
-            <boxGeometry args={[data.scale.x * 1.1, 0.4, data.scale.z * 1.1]} />
+            <boxGeometry args={[data.scale[0] * 1.1, 0.4, data.scale[2] * 1.1]} />
             <meshStandardMaterial
               color="#555555"
               metalness={0.6}
@@ -276,13 +276,13 @@ function Buildings({ count = 30 }) {
             <mesh
               key={`pillar-${index}`}
               position={[
-                x * (data.scale.x / 2),
+                x * (data.scale[0] / 2),
                 0,
-                z * (data.scale.z / 2)
+                z * (data.scale[2] / 2)
               ]}
               castShadow
             >
-              <boxGeometry args={[1, data.scale.y, 1]} />
+              <boxGeometry args={[1, data.scale[1], 1]} />
               <meshStandardMaterial
                 color="#555555"
                 metalness={0.6}

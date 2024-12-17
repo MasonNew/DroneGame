@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -39,7 +39,7 @@ export function Player() {
     camera.position.set(-90, playerState.current.eyeLevel, -90);
   }, [camera]);
 
-  const checkBuildingCollision = useCallback((newPosition: THREE.Vector3) => {
+  const checkBuildingCollision = (newPosition: THREE.Vector3): boolean => {
     // Create a ray for collision detection
     const raycaster = new THREE.Raycaster();
     const directions = [
@@ -75,7 +75,7 @@ export function Player() {
     }
 
     return false; // No collision
-  }, []);
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -200,7 +200,7 @@ export function Player() {
       window.removeEventListener('keyup', handleKeyUp);
       cancelAnimationFrame(animationId);
     };
-  }, [checkBuildingCollision]);
+  }, [camera, scene]);
 
   return null;
 }

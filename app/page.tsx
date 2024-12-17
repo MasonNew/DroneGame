@@ -16,8 +16,8 @@ export default function Home() {
         
         <p className="text-xl text-gray-400 max-w-md mx-auto">
           Take aim as an elite sniper in a city plagued by mysterious drone sightings. 
-          Whether they&apos;re spies, aliens, or just nosy neighbors with too much tech, 
-          your job is simple: shoot first, ask questions never. The skies aren&apos;t big 
+          Whether they're spies, aliens, or just nosy neighbors with too much tech, 
+          your job is simple: shoot first, ask questions never. The skies aren't big 
           enough for the both of you!
         </p>
 

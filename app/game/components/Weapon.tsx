@@ -1,12 +1,10 @@
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useGameStore } from '../store';
 import * as THREE from 'three';
 import { BulletSystem } from './weapon/BulletSystem';
-
-const RELOAD_TIME = 2000; // 2 seconds reload time
 
 export function Weapon() {
   const { camera, scene } = useThree();
@@ -17,11 +15,13 @@ export function Weapon() {
     updateScore, 
     ammo, 
     isReloading, 
-    startReload,
-    handleShot 
+    startReload, 
+    finishReload,
+    useAmmo 
   } = useGameStore();
   
   const bulletSystem = useRef<BulletSystem>();
+  const isShooting = useRef(false);
   const lastShootTime = useRef(0);
   const muzzleFlash = useRef<THREE.PointLight>();
 
@@ -48,38 +48,9 @@ export function Weapon() {
     }
   });
 
-  const createBullet = useCallback((position: THREE.Vector3, direction: THREE.Vector3) => {
-    if (bulletSystem.current) {
-      bulletSystem.current.createBullet(
-        position,
-        direction,
-        300,
-        weather,
-        activeWeapon,
-        (hitPoint: THREE.Vector3, droneId: string) => {
-          shootDrone(droneId);
-          updateScore(Math.floor(hitPoint.distanceTo(camera.position)));
-        }
-      );
-    }
-  }, [weather, activeWeapon, shootDrone, updateScore, camera]);
-
-  const performVisualEffects = useCallback((position: THREE.Vector3) => {
-    // Show muzzle flash
-    if (muzzleFlash.current) {
-      muzzleFlash.current.position.copy(position).add(new THREE.Vector3(0, -0.1, -0.5));
-      muzzleFlash.current.visible = true;
-      setTimeout(() => {
-        if (muzzleFlash.current) muzzleFlash.current.visible = false;
-      }, 50);
-    }
-  }, []);
-
-  const shoot = useCallback(() => {
-    if (ammo <= 0 || isReloading || !bulletSystem.current) {
-      if (ammo <= 0) {
-        startReload();
-      }
+  const shoot = () => {
+    if (isShooting.current || ammo <= 0 || isReloading || !bulletSystem.current) {
+      if (ammo <= 0) reload();
       return;
     }
 
@@ -87,6 +58,19 @@ export function Weapon() {
     if (now - lastShootTime.current < 500) return;
 
     lastShootTime.current = now;
+    isShooting.current = true;
+
+    // Decrease ammo
+    useAmmo();
+
+    // Show muzzle flash
+    if (muzzleFlash.current) {
+      muzzleFlash.current.position.copy(camera.position).add(new THREE.Vector3(0, -0.1, -0.5));
+      muzzleFlash.current.visible = true;
+      setTimeout(() => {
+        if (muzzleFlash.current) muzzleFlash.current.visible = false;
+      }, 50);
+    }
 
     // Apply screen shake
     const originalPosition = camera.position.clone();
@@ -97,26 +81,31 @@ export function Weapon() {
     const direction = new THREE.Vector3();
     camera.getWorldDirection(direction);
     
-    // Show visual effects
-    performVisualEffects(camera.position);
-
-    // Create bullet and handle ammo usage
-    createBullet(
+    // Create bullet
+    bulletSystem.current.createBullet(
       camera.position.clone().add(direction.multiplyScalar(2)),
-      direction.normalize()
+      direction.normalize(),
+      300,
+      weather,
+      activeWeapon,
+      (hitPoint: THREE.Vector3, droneId: string) => {
+        console.log('Bullet hit drone:', droneId);
+        shootDrone(droneId);
+        updateScore(Math.floor(hitPoint.distanceTo(camera.position)));
+      }
     );
-    handleShot();
 
     // Reset camera position
     setTimeout(() => {
       camera.position.copy(originalPosition);
+      isShooting.current = false;
     }, 50);
-  }, [ammo, isReloading, camera, createBullet, handleShot, startReload, performVisualEffects]);
+  };
 
-  const reload = useCallback(() => {
+  const reload = () => {
     if (isReloading || ammo === activeWeapon.ammoCapacity) return;
     startReload();
-  }, [isReloading, ammo, activeWeapon.ammoCapacity, startReload]);
+  };
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -136,17 +125,7 @@ export function Weapon() {
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [shoot, reload]);
-
-  useEffect(() => {
-    if (isReloading && ammo < activeWeapon.ammoCapacity) {
-      const reloadTimer = setTimeout(() => {
-        startReload();
-      }, RELOAD_TIME);
-
-      return () => clearTimeout(reloadTimer);
-    }
-  }, [isReloading, ammo, activeWeapon.ammoCapacity, startReload]);
+  }, [camera, scene, weather, activeWeapon, ammo, isReloading]);
 
   return null;
 }
