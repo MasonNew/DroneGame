@@ -48,6 +48,8 @@ export function Weapon() {
     }
   });
 
+  const ammo = useAmmo();
+
   const shoot = () => {
     if (isShooting.current || ammo <= 0 || isReloading || !bulletSystem.current) {
       if (ammo <= 0) reload();

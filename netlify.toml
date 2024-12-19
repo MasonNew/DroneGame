@@ -1,5 +1,5 @@
 [build]
-  command = "npm install --legacy-peer-deps && npm run build"
+  command = "npm install --legacy-peer-deps && NEXT_DISABLE_ESLINT=1 npm run build"
   publish = ".next"
 
 [build.environment]

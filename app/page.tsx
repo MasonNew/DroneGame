@@ -11,14 +11,11 @@ export default function Home() {
         </div>
         
         <h1 className="text-6xl font-bold tracking-tighter">
-          Drone Buster
+          Welcome to Today&apos;s Game
         </h1>
         
         <p className="text-xl text-gray-400 max-w-md mx-auto">
-          Take aim as an elite sniper in a city plagued by mysterious drone sightings. 
-          Whether they're spies, aliens, or just nosy neighbors with too much tech, 
-          your job is simple: shoot first, ask questions never. The skies aren't big 
-          enough for the both of you!
+          Let&apos;s start playing!
         </p>
 
         <div className="space-y-4">
