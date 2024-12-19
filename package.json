@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "clean": "rimraf .next node_modules",
-    "build": "npm run clean && npm install --legacy-peer-deps && npx next build --no-lint",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
