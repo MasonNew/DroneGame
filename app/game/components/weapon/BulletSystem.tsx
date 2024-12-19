@@ -2,6 +2,15 @@
 
 import * as THREE from 'three';
 import { CollisionManager } from '../collision/CollisionManager';
+import { WeaponConfig } from '../../types';
+
+interface Weather {
+  windSpeed: number;
+  windDirection: number;
+  visibility: number;
+  precipitation: 'none' | 'rain';
+  precipitationIntensity: number;
+}
 
 export class BulletSystem {
   private scene: THREE.Scene;
@@ -11,6 +20,7 @@ export class BulletSystem {
     velocity: THREE.Vector3;
     tracer: THREE.Line;
     startTime: number;
+    onHit: (hitPoint: THREE.Vector3, droneId: string) => void;
   }[] = [];
   private bulletGeometry: THREE.SphereGeometry;
   private bulletMaterial: THREE.MeshBasicMaterial;
@@ -37,8 +47,8 @@ export class BulletSystem {
     position: THREE.Vector3,
     direction: THREE.Vector3,
     speed: number,
-    weather: any,
-    weapon: any,
+    weather: Weather,
+    weapon: WeaponConfig,
     onHit: (hitPoint: THREE.Vector3, droneId: string) => void
   ) {
     // Create bullet mesh (reusing geometry and material)
@@ -61,7 +71,8 @@ export class BulletSystem {
       mesh: bullet,
       velocity: direction.multiplyScalar(speed),
       tracer,
-      startTime: Date.now()
+      startTime: Date.now(),
+      onHit
     });
 
     // Remove tracer after 2 seconds
@@ -116,7 +127,7 @@ export class BulletSystem {
 
   private createExplosionEffect(position: THREE.Vector3) {
     // Create multiple explosion lights
-    const lights = [];
+    const lights: THREE.PointLight[] = [];
     const lightColors = [0xff4400, 0xff8800, 0xffaa00];
     for (let i = 0; i < 3; i++) {
       const light = new THREE.PointLight(lightColors[i], 8, 15);
@@ -248,9 +259,13 @@ export class BulletSystem {
         }
 
         if (isDrone) {
-          this.createExplosionEffect(intersect.point);
-          onHit(intersect.point, droneId);
+          bullet.onHit(intersect.point, droneId);
           this.removeBullet(i);
+          break;
+        }
+
+        // Stop at buildings
+        if (intersect.object.name === 'building-collider') {
           break;
         }
       }

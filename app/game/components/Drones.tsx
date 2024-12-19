@@ -111,7 +111,8 @@ export function Drones() {
           const basePosition = basePositions.current[drone.id];
           
           if (droneRef && basePosition) {
-            updateDronePosition(droneRef, basePosition, drone, elapsedTime.current);
+            const newPosition = updateDronePosition(drone.pattern, elapsedTime.current, basePosition, drone.speed);
+            droneRef.position.copy(newPosition);
           }
         }
       });

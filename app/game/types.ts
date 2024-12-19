@@ -20,6 +20,21 @@ export interface WeaponConfig {
   windAffect: number;
 }
 
+export interface Objective {
+  id: string;
+  type: 'eliminate' | 'protect';
+  count?: number;
+  timeLimit?: number;
+  completed: boolean;
+}
+
+export interface Mission {
+  id: string;
+  name: string;
+  objectives: Objective[];
+  timeLimit?: number;
+}
+
 export interface GameState {
   score: number;
   ammo: number;
@@ -29,7 +44,10 @@ export interface GameState {
     windSpeed: number;
     windDirection: number;
     visibility: number;
+    precipitation: 'none' | 'rain';
+    precipitationIntensity: number;
   };
   gameTime: number;
   difficulty: number;
+  currentMission: Mission | null;
 }

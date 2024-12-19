@@ -3,7 +3,7 @@
 import { useGameStore } from '../../store';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Crosshair2, Timer } from 'lucide-react';
+import { Crosshair, Timer } from 'lucide-react';
 
 export function WeaponHUD() {
   const { activeWeapon, ammo, isReloading } = useGameStore();
@@ -22,7 +22,7 @@ export function WeaponHUD() {
       </div>
       
       <div className="flex items-center gap-2">
-        <Crosshair2 className="w-4 h-4" />
+        <Crosshair className="w-4 h-4" />
         <Badge variant="secondary">
           Accuracy: {Math.round(activeWeapon.accuracy * 100)}%
         </Badge>

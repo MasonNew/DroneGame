@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { GameState, WeaponConfig, DroneType } from './types';
+import { GameState, WeaponConfig, DroneType, Mission } from './types';
 import { CollisionManager } from './components/collision/CollisionManager';
 import * as THREE from 'three';
 
@@ -80,6 +80,8 @@ interface GameStore extends GameState {
   checkAchievements: () => void;
   hideAchievement: () => void;
   useAmmo: () => void;
+  startMission: (mission: Mission) => void;
+  completeMissionObjective: (objectiveId: string) => void;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -91,9 +93,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     windSpeed: 0,
     windDirection: 0,
     visibility: 1,
+    precipitation: 'none' as 'none' | 'rain',
+    precipitationIntensity: 0
   },
   gameTime: 0,
   difficulty: 1,
+  currentMission: null,
   isReloading: false,
   reloadProgress: 0,
   collisionManager: null,
@@ -111,9 +116,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       windSpeed: Math.random() * 10,
       windDirection: Math.random() * 360,
       visibility: 0.8 + Math.random() * 0.2,
+      precipitation: Math.random() > 0.7 ? 'rain' : 'none',
+      precipitationIntensity: Math.random() * 0.5 + 0.5
     },
     gameTime: 0,
     difficulty: 1,
+    currentMission: null,
     isReloading: false,
     reloadProgress: 0,
     totalDronesDestroyed: 0,
@@ -121,6 +129,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
     showAchievement: false,
     latestAchievement: null,
   }),
+
+  startMission: (mission: Mission) => set({ currentMission: mission }),
+
+  completeMissionObjective: (objectiveId: string) => set(state => ({
+    currentMission: state.currentMission ? {
+      ...state.currentMission,
+      objectives: state.currentMission.objectives.map(obj =>
+        obj.id === objectiveId ? { ...obj, completed: true } : obj
+      )
+    } : null
+  })),
 
   updateScore: (points) => set((state) => ({
     score: state.score + 1, // Always add 1 point per drone
@@ -214,6 +233,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
       windSpeed: Math.random() * 10,
       windDirection: (state.weather.windDirection + Math.random() * 20 - 10) % 360,
       visibility: Math.max(0.5, Math.min(1, state.weather.visibility + (Math.random() * 0.2 - 0.1))),
+      precipitation: Math.random() > 0.7 ? 'rain' : 'none',
+      precipitationIntensity: Math.random() * 0.5 + 0.5
     },
   })),
+
+  checkAchievements: () => {
+    const state = get();
+    const newAchievements = state.achievements.map(achievement => {
+      if (!achievement.unlocked && state.totalDronesDestroyed >= achievement.threshold) {
+        // Show achievement notification
+        setTimeout(() => {
+          set({
+            showAchievement: true,
+            latestAchievement: achievement
+          });
+          
+          // Hide achievement after 3 seconds
+          setTimeout(() => {
+            set({ showAchievement: false });
+          }, 3000);
+        }, 0);
+        
+        return { ...achievement, unlocked: true };
+      }
+      return achievement;
+    });
+
+    set({ achievements: newAchievements });
+  },
+
+  hideAchievement: () => set({ showAchievement: false }),
 }));

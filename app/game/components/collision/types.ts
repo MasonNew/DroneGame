@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 export interface CollisionEvent {
   droneId: string;
   hitPoint: THREE.Vector3;

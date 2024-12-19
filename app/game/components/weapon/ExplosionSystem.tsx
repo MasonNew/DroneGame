@@ -2,13 +2,17 @@
 
 import * as THREE from 'three';
 
+interface Explosion {
+  particles: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>;
+  light: THREE.PointLight;
+  startTime: number;
+  velocities: Float32Array;
+  sizes: Float32Array;
+}
+
 export class ExplosionSystem {
   private scene: THREE.Scene;
-  private explosions: Set<{
-    particles: THREE.Points;
-    light: THREE.PointLight;
-    startTime: number;
-  }> = new Set();
+  private explosions: Set<Explosion> = new Set();
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;

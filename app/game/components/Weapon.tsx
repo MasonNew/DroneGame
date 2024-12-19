@@ -118,8 +118,12 @@ export function Weapon() {
             bulletSystem.current.createBullet(
               camera.position.clone(),
               direction,
-              activeWeapon.damage,
-              weather
+              100, // bullet speed
+              weather,
+              activeWeapon,
+              (hitPoint: THREE.Vector3, droneId: string) => {
+                shootDrone(droneId);
+              }
             );
           }
 
