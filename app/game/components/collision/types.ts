@@ -1,8 +1,9 @@
+import * as THREE from 'three';
+
 export interface CollisionEvent {
+  type: 'bullet-drone';
   droneId: string;
-  hitPoint: THREE.Vector3;
-  bulletVelocity: THREE.Vector3;
-  damage: number;
+  position: THREE.Vector3;
 }
 
 export interface ColliderConfig {

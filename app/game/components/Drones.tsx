@@ -2,7 +2,7 @@
 
 import { useFrame, useThree } from '@react-three/fiber';
 import { useGameStore } from '../store';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 import { updateDronePosition } from '../utils/dronePatterns';
 import { DroneType } from '../types';
@@ -15,10 +15,44 @@ export function Drones() {
   const elapsedTime = useRef(0);
   const spawnTimer = useRef(0);
 
+  const spawnNewDrone = useCallback(() => {
+    const droneTypes = ['scout', 'combat', 'stealth'] as const;
+    const patterns = ['circular', 'linear', 'erratic'] as const;
+    
+    const type = droneTypes[Math.floor(Math.random() * 3)];
+    const pattern = patterns[Math.floor(Math.random() * 3)];
+    
+    const drone: DroneType = {
+      id: `drone-${Date.now()}`,
+      type: type,
+      speed: type === 'stealth' ? 3 : type === 'scout' ? 2 : 1.5,
+      health: type === 'combat' ? 150 : type === 'scout' ? 100 : 80,
+      value: type === 'stealth' ? 200 : type === 'combat' ? 150 : 100,
+      pattern: pattern,
+      size: type === 'combat' ? 1.2 : type === 'scout' ? 1 : 0.8,
+      model: type
+    };
+
+    const baseHeight = 40;
+    const heightVariation = type === 'stealth' ? 40 : type === 'scout' ? 30 : 20;
+    
+    basePositions.current[drone.id] = new THREE.Vector3(
+      Math.random() * 100 - 50,
+      baseHeight + Math.random() * heightVariation,
+      Math.random() * 100 - 50
+    );
+
+    spawnDrone(drone);
+  }, [spawnDrone]);
+
   // Initialize and spawn first drone
   useEffect(() => {
-    spawnNewDrone();
-  }, []);
+    const interval = setInterval(() => {
+      spawnNewDrone();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [spawnNewDrone]);
 
   const destroyDrone = (droneId: string) => {
     console.log('Destroying drone:', droneId);
@@ -109,36 +143,6 @@ export function Drones() {
       requestAnimationFrame(animate);
     };
     animate();
-  };
-
-  const spawnNewDrone = () => {
-    const droneTypes = ['scout', 'combat', 'stealth'] as const;
-    const patterns = ['circular', 'linear', 'erratic'] as const;
-    
-    const type = droneTypes[Math.floor(Math.random() * 3)];
-    const pattern = patterns[Math.floor(Math.random() * 3)];
-    
-    const drone: DroneType = {
-      id: `drone-${Date.now()}`,
-      type: type,
-      speed: type === 'stealth' ? 3 : type === 'scout' ? 2 : 1.5,
-      health: type === 'combat' ? 150 : type === 'scout' ? 100 : 80,
-      value: type === 'stealth' ? 200 : type === 'combat' ? 150 : 100,
-      pattern: pattern,
-      size: type === 'combat' ? 1.2 : type === 'scout' ? 1 : 0.8,
-      model: type
-    };
-
-    const baseHeight = 40;
-    const heightVariation = type === 'stealth' ? 40 : type === 'scout' ? 30 : 20;
-    
-    basePositions.current[drone.id] = new THREE.Vector3(
-      Math.random() * 100 - 50,
-      baseHeight + Math.random() * heightVariation,
-      Math.random() * 100 - 50
-    );
-
-    spawnDrone(drone);
   };
 
   // Update drone positions and spawn new ones

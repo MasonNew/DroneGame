@@ -114,6 +114,8 @@ export function FloatingItems() {
 
   if (!textureRef.current || !glowMaterialRef.current) return null;
 
+  const glowMaterial = glowMaterialRef.current as THREE.Material;
+
   return (
     <group>
       {items.map(item => (
@@ -132,15 +134,15 @@ export function FloatingItems() {
               map={textureRef.current}
               transparent={true}
               opacity={0.9}
-              depthWrite={false}  // Added to prevent sprite from being occluded
-              sizeAttenuation={true}  // Makes the sprite maintain size regardless of distance
+              depthWrite={false}
+              sizeAttenuation={true}
             />
           </sprite>
 
           {/* Glow effect - made larger */}
           <mesh>
             <sphereGeometry args={[3, 32, 32]} />
-            <primitive object={glowMaterialRef.current} attach="material" />
+            <primitive object={glowMaterial} attach="material" />
           </mesh>
         </group>
       ))}

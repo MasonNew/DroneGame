@@ -20,16 +20,19 @@ export interface WeaponConfig {
   windAffect: number;
 }
 
+export interface Weather {
+  windSpeed: number;
+  windDirection: number;
+  visibility: number;
+  precipitation: 'none' | 'rain' | 'snow';
+}
+
 export interface GameState {
   score: number;
   ammo: number;
   activeWeapon: WeaponConfig;
   activeDrones: DroneType[];
-  weather: {
-    windSpeed: number;
-    windDirection: number;
-    visibility: number;
-  };
+  weather: Weather;
   gameTime: number;
   difficulty: number;
 }

@@ -44,7 +44,7 @@ export function WeatherEffects() {
         color="#aaaaaa"
         size={0.1}
         transparent
-        opacity={weather.precipitationIntensity}
+        opacity={0.5}
       />
     </points>
   );

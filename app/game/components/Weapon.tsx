@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useGameStore } from '../store';
 import * as THREE from 'three';
@@ -24,6 +24,12 @@ export function Weapon() {
   const isShooting = useRef(false);
   const lastShootTime = useRef(0);
   const muzzleFlash = useRef<THREE.PointLight>();
+  const useAmmoRef = useRef(useAmmo);
+
+  // Keep useAmmoRef current
+  useEffect(() => {
+    useAmmoRef.current = useAmmo;
+  }, [useAmmo]);
 
   // Initialize systems
   useEffect(() => {
@@ -48,7 +54,12 @@ export function Weapon() {
     }
   });
 
-  const shoot = () => {
+  const reload = useCallback(() => {
+    if (isReloading || ammo === activeWeapon.ammoCapacity) return;
+    startReload();
+  }, [isReloading, ammo, activeWeapon.ammoCapacity, startReload]);
+
+  const shoot = useCallback(() => {
     if (isShooting.current || ammo <= 0 || isReloading || !bulletSystem.current) {
       if (ammo <= 0) reload();
       return;
@@ -60,8 +71,8 @@ export function Weapon() {
     lastShootTime.current = now;
     isShooting.current = true;
 
-    // Decrease ammo
-    useAmmo();
+    // Decrease ammo using the ref
+    useAmmoRef.current();
 
     // Show muzzle flash
     if (muzzleFlash.current) {
@@ -100,12 +111,7 @@ export function Weapon() {
       camera.position.copy(originalPosition);
       isShooting.current = false;
     }, 50);
-  };
-
-  const reload = () => {
-    if (isReloading || ammo === activeWeapon.ammoCapacity) return;
-    startReload();
-  };
+  }, [ammo, isReloading, camera, weather, activeWeapon, shootDrone, updateScore, reload]);
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -125,7 +131,7 @@ export function Weapon() {
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [camera, scene, weather, activeWeapon, ammo, isReloading]);
+  }, [shoot, reload, isReloading, ammo, activeWeapon.ammoCapacity]);
 
   return null;
 }

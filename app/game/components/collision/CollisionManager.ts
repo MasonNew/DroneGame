@@ -50,18 +50,16 @@ export class CollisionManager {
     );
 
     // Check all drone hitboxes
-    for (const [droneId, hitbox] of this.hitboxes) {
-      if (hitbox.checkCollision(bulletPosition, bulletRadius, raycaster)) {
+    Array.from(this.hitboxes.entries()).forEach(([droneId, hitbox]) => {
+      if (hitbox.checkCollision(bulletPosition, bulletRadius)) {
         // Create collision event
         this.collisionEvents.push({
+          type: 'bullet-drone',
           droneId,
-          hitPoint: bulletPosition.clone(),
-          bulletVelocity: bulletVelocity.clone(),
-          damage
+          position: bulletPosition.clone()
         });
-        return droneId;
       }
-    }
+    });
     return null;
   }
 

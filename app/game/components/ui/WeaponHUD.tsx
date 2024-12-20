@@ -1,32 +1,32 @@
 'use client';
 
 import { useGameStore } from '../../store';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Crosshair2, Timer } from 'lucide-react';
+import { Crosshair, Timer } from 'lucide-react';
 
 export function WeaponHUD() {
   const { activeWeapon, ammo, isReloading } = useGameStore();
   
   return (
-    <div className="fixed bottom-4 right-4 space-y-2">
-      <div className="flex items-center gap-2">
-        <Badge variant="outline">{activeWeapon.type}</Badge>
-        <Progress value={(ammo / activeWeapon.ammoCapacity) * 100} className="w-24" />
-        {isReloading && (
-          <div className="flex items-center gap-1 text-yellow-500">
-            <Timer className="w-4 h-4 animate-spin" />
-            <span>Reloading...</span>
+    <div className="fixed bottom-4 right-4">
+      <Card className="p-4 bg-black/50 text-white">
+        <div className="flex items-center gap-4">
+          <Crosshair className="w-6 h-6" />
+          <div>
+            <h4 className="font-bold">{activeWeapon.type}</h4>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">
+                {ammo} / {activeWeapon.ammoCapacity}
+              </Badge>
+              {isReloading && (
+                <Progress value={ammo / activeWeapon.ammoCapacity * 100} className="w-20" />
+              )}
+            </div>
           </div>
-        )}
-      </div>
-      
-      <div className="flex items-center gap-2">
-        <Crosshair2 className="w-4 h-4" />
-        <Badge variant="secondary">
-          Accuracy: {Math.round(activeWeapon.accuracy * 100)}%
-        </Badge>
-      </div>
+        </div>
+      </Card>
     </div>
   );
 }

@@ -13,7 +13,7 @@ function Trees({ count = 50 }) {
         Math.random() * 200 - 100,
         0,
         Math.random() * 200 - 100
-      ],
+      ] as [number, number, number],
       scale: 0.8 + Math.random() * 0.4,
       rotation: Math.random() * Math.PI
     }))
@@ -46,7 +46,7 @@ function Bushes({ count = 100 }) {
         Math.random() * 180 - 90,
         0.5,
         Math.random() * 180 - 90
-      ],
+      ] as [number, number, number],
       scale: 0.6 + Math.random() * 0.4
     }))
   ).current;
@@ -121,12 +121,12 @@ function Buildings({ count = 30 }) {
           Math.cos(angle) * radius,
           0,
           Math.sin(angle) * radius
-        ],
+        ] as [number, number, number],
         scale: [
           10 + Math.random() * 10,
           20 + Math.random() * 30,
           10 + Math.random() * 10
-        ],
+        ] as [number, number, number],
         rotation: Math.random() * Math.PI * 2,
         windowRows: Math.floor(Math.random() * 3) + 4, // 4-6 rows of windows
         windowCols: Math.floor(Math.random() * 2) + 3  // 3-4 columns of windows

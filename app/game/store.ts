@@ -60,6 +60,21 @@ const achievements: Achievement[] = [
   }
 ];
 
+interface MissionObjective {
+  id: string;
+  type: 'eliminate' | 'protect';
+  count?: number;
+  timeLimit?: number;
+  completed: boolean;
+}
+
+interface Mission {
+  id: string;
+  name: string;
+  objectives: MissionObjective[];
+  timeLimit?: number;
+}
+
 interface GameStore extends GameState {
   collisionManager: CollisionManager | null;
   isReloading: boolean;
@@ -68,6 +83,7 @@ interface GameStore extends GameState {
   achievements: Achievement[];
   showAchievement: boolean;
   latestAchievement: Achievement | null;
+  currentMission: Mission | null;
   
   initGame: () => void;
   updateScore: (points: number) => void;
@@ -90,7 +106,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   weather: {
     windSpeed: 0,
     windDirection: 0,
-    visibility: 1,
+    visibility: 1000,
+    precipitation: 'none'
   },
   gameTime: 0,
   difficulty: 1,
@@ -101,6 +118,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   achievements: [...achievements],
   showAchievement: false,
   latestAchievement: null,
+  currentMission: null,
 
   initGame: () => set({
     score: 0,
@@ -111,6 +129,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       windSpeed: Math.random() * 10,
       windDirection: Math.random() * 360,
       visibility: 0.8 + Math.random() * 0.2,
+      precipitation: 'none'
     },
     gameTime: 0,
     difficulty: 1,
@@ -120,6 +139,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
     achievements: achievements.map(a => ({ ...a, unlocked: false })),
     showAchievement: false,
     latestAchievement: null,
+    currentMission: {
+      id: 'mission-1',
+      name: 'First Strike',
+      objectives: [
+        {
+          id: 'obj-1',
+          type: 'eliminate',
+          count: 5,
+          completed: false
+        }
+      ],
+      timeLimit: 300
+    },
   }),
 
   updateScore: (points) => set((state) => ({
@@ -214,6 +246,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
       windSpeed: Math.random() * 10,
       windDirection: (state.weather.windDirection + Math.random() * 20 - 10) % 360,
       visibility: Math.max(0.5, Math.min(1, state.weather.visibility + (Math.random() * 0.2 - 0.1))),
+      precipitation: 'none'
     },
   })),
+
+  checkAchievements: () => {
+    const state = get();
+    const newAchievements = state.achievements.map(achievement => {
+      if (!achievement.unlocked && state.totalDronesDestroyed >= achievement.threshold) {
+        set({
+          showAchievement: true,
+          latestAchievement: achievement
+        });
+        return { ...achievement, unlocked: true };
+      }
+      return achievement;
+    });
+
+    set({ achievements: newAchievements });
+  },
+
+  hideAchievement: () => set({ showAchievement: false }),
 }));
