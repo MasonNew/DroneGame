@@ -6,7 +6,7 @@ import { useFrame } from '@react-three/fiber';
 import { Instances, Instance, useGLTF, useTexture } from '@react-three/drei';
 
 // Create instanced meshes for better performance
-function Trees({ count = 50 }) {
+function Trees({ count = 30 }) {
   const positions = useRef(
     Array.from({ length: count }, () => ({
       position: [
@@ -25,11 +25,9 @@ function Trees({ count = 50 }) {
       <meshStandardMaterial color="#4b3f2f" />
       {positions.map((data, i) => (
         <group key={i} position={data.position}>
-          {/* Tree trunk */}
           <Instance scale={[1, data.scale * 2, 1]} />
-          {/* Tree top */}
           <mesh position={[0, data.scale * 2, 0]}>
-            <coneGeometry args={[1.5, 3 * data.scale, 8]} />
+            <coneGeometry args={[1.5, 3 * data.scale, 6]} />
             <meshStandardMaterial color="#1a472a" />
           </mesh>
         </group>
@@ -39,7 +37,7 @@ function Trees({ count = 50 }) {
 }
 
 // Instanced bushes
-function Bushes({ count = 100 }) {
+function Bushes({ count = 50 }) {
   const positions = useRef(
     Array.from({ length: count }, () => ({
       position: [
@@ -53,7 +51,7 @@ function Bushes({ count = 100 }) {
 
   return (
     <Instances limit={count}>
-      <sphereGeometry args={[1, 8, 8]} />
+      <sphereGeometry args={[1, 6, 6]} />
       <meshStandardMaterial color="#2d5a27" />
       {positions.map((data, i) => (
         <Instance
@@ -71,17 +69,21 @@ function Ground() {
   const groundTexture = useTexture('/textures/grass.jpg');
   const roadTexture = useTexture('/textures/road.jpg');
 
-  // Repeat textures
+  // Optimize textures
+  groundTexture.minFilter = THREE.LinearMipMapLinearFilter;
+  groundTexture.magFilter = THREE.LinearFilter;
   groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
-  groundTexture.repeat.set(50, 50);
+  groundTexture.repeat.set(25, 25);
+
+  roadTexture.minFilter = THREE.LinearMipMapLinearFilter;
+  roadTexture.magFilter = THREE.LinearFilter;
   roadTexture.wrapS = roadTexture.wrapT = THREE.RepeatWrapping;
-  roadTexture.repeat.set(20, 1);
+  roadTexture.repeat.set(10, 1);
 
   return (
     <group>
-      {/* Main ground */}
       <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[400, 400]} />
+        <planeGeometry args={[400, 400, 32, 32]} />
         <meshStandardMaterial 
           map={groundTexture}
           roughness={0.8}
@@ -89,17 +91,8 @@ function Ground() {
         />
       </mesh>
 
-      {/* Roads */}
       <mesh rotation-x={-Math.PI / 2} position={[0, 0.01, 0]} receiveShadow>
-        <planeGeometry args={[10, 200]} />
-        <meshStandardMaterial 
-          map={roadTexture}
-          roughness={0.7}
-          metalness={0.2}
-        />
-      </mesh>
-      <mesh rotation-x={-Math.PI / 2} rotation-z={Math.PI / 2} position={[0, 0.01, 0]} receiveShadow>
-        <planeGeometry args={[10, 200]} />
+        <planeGeometry args={[10, 200, 1, 16]} />
         <meshStandardMaterial 
           map={roadTexture}
           roughness={0.7}
@@ -111,7 +104,7 @@ function Ground() {
 }
 
 // Buildings using instancing for better performance
-function Buildings({ count = 30 }) {
+function Buildings({ count = 20 }) {
   const positions = useRef(
     Array.from({ length: count }, () => {
       const angle = Math.random() * Math.PI * 2;
@@ -128,8 +121,8 @@ function Buildings({ count = 30 }) {
           10 + Math.random() * 10
         ] as [number, number, number],
         rotation: Math.random() * Math.PI * 2,
-        windowRows: Math.floor(Math.random() * 3) + 4, // 4-6 rows of windows
-        windowCols: Math.floor(Math.random() * 2) + 3  // 3-4 columns of windows
+        windowRows: Math.floor(Math.random() * 2) + 3,
+        windowCols: Math.floor(Math.random() * 2) + 2
       };
     })
   ).current;
@@ -142,7 +135,6 @@ function Buildings({ count = 30 }) {
           position={data.position}
           rotation-y={data.rotation}
         >
-          {/* Main building structure */}
           <mesh castShadow receiveShadow>
             <boxGeometry args={data.scale} />
             <meshStandardMaterial
@@ -152,16 +144,7 @@ function Buildings({ count = 30 }) {
             />
           </mesh>
 
-          {/* Collision box - slightly larger than the building */}
-          <mesh visible={false} name="building-collider">
-            <boxGeometry args={[
-              data.scale[0] * 1.1,
-              data.scale[1],
-              data.scale[2] * 1.1
-            ]} />
-          </mesh>
-
-          {/* Windows - Front face */}
+          {/* Windows - Front face only for better performance */}
           {Array.from({ length: data.windowRows }).map((_, row) =>
             Array.from({ length: data.windowCols }).map((_, col) => (
               <group
@@ -172,16 +155,6 @@ function Buildings({ count = 30 }) {
                   data.scale[2] / 2 + 0.1
                 ]}
               >
-                {/* Window frame */}
-                <mesh castShadow>
-                  <boxGeometry args={[data.scale[0] * 0.15, data.scale[1] * 0.12, 0.2]} />
-                  <meshStandardMaterial
-                    color="#333333"
-                    metalness={0.8}
-                    roughness={0.2}
-                  />
-                </mesh>
-                {/* Window glass */}
                 <mesh>
                   <boxGeometry args={[data.scale[0] * 0.13, data.scale[1] * 0.1, 0.1]} />
                   <meshPhysicalMaterial
@@ -190,122 +163,18 @@ function Buildings({ count = 30 }) {
                     roughness={0.1}
                     transparent={true}
                     opacity={0.7}
-                    envMapIntensity={1.5}
+                    envMapIntensity={1}
                   />
                 </mesh>
-                {/* Window light */}
                 <pointLight
                   color="#ffaa44"
-                  intensity={0.5}
-                  distance={5}
+                  intensity={0.3}
+                  distance={3}
                   decay={2}
                 />
               </group>
             ))
           )}
-
-          {/* Windows - Back face */}
-          {Array.from({ length: data.windowRows }).map((_, row) =>
-            Array.from({ length: data.windowCols }).map((_, col) => (
-              <group
-                key={`back-${row}-${col}`}
-                position={[
-                  (col - (data.windowCols - 1) / 2) * (data.scale[0] * 0.2),
-                  (row - data.windowRows / 2) * (data.scale[1] * 0.15) + data.scale[1] * 0.3,
-                  -data.scale[2] / 2 - 0.1
-                ]}
-              >
-                <mesh castShadow>
-                  <boxGeometry args={[data.scale[0] * 0.15, data.scale[1] * 0.12, 0.2]} />
-                  <meshStandardMaterial
-                    color="#333333"
-                    metalness={0.8}
-                    roughness={0.2}
-                  />
-                </mesh>
-                <mesh>
-                  <boxGeometry args={[data.scale[0] * 0.13, data.scale[1] * 0.1, 0.1]} />
-                  <meshPhysicalMaterial
-                    color="#88ccff"
-                    metalness={0.9}
-                    roughness={0.1}
-                    transparent={true}
-                    opacity={0.7}
-                    envMapIntensity={1.5}
-                  />
-                </mesh>
-                <pointLight
-                  color="#ffaa44"
-                  intensity={0.5}
-                  distance={5}
-                  decay={2}
-                />
-              </group>
-            ))
-          )}
-
-          {/* Building details */}
-          {/* Roof edge */}
-          <mesh
-            position={[0, data.scale[1] / 2 + 0.2, 0]}
-            castShadow
-          >
-            <boxGeometry args={[data.scale[0] * 1.1, 0.4, data.scale[2] * 1.1]} />
-            <meshStandardMaterial
-              color="#444444"
-              metalness={0.7}
-              roughness={0.3}
-            />
-          </mesh>
-
-          {/* Base/Foundation */}
-          <mesh
-            position={[0, -data.scale[1] / 2 + 0.2, 0]}
-            receiveShadow
-          >
-            <boxGeometry args={[data.scale[0] * 1.1, 0.4, data.scale[2] * 1.1]} />
-            <meshStandardMaterial
-              color="#555555"
-              metalness={0.6}
-              roughness={0.4}
-            />
-          </mesh>
-
-          {/* Corner pillars */}
-          {[[-1, -1], [-1, 1], [1, -1], [1, 1]].map(([x, z], index) => (
-            <mesh
-              key={`pillar-${index}`}
-              position={[
-                x * (data.scale[0] / 2),
-                0,
-                z * (data.scale[2] / 2)
-              ]}
-              castShadow
-            >
-              <boxGeometry args={[1, data.scale[1], 1]} />
-              <meshStandardMaterial
-                color="#555555"
-                metalness={0.6}
-                roughness={0.4}
-              />
-            </mesh>
-          ))}
-        </group>
-      ))}
-    </group>
-  );
-}
-
-// Sidewalks
-function Sidewalks() {
-  return (
-    <group>
-      {[0, 90, 180, 270].map((angle, i) => (
-        <group key={i} rotation-y={angle * Math.PI / 180}>
-          <mesh position={[0, 0.1, 40]} receiveShadow>
-            <boxGeometry args={[12, 0.2, 100]} />
-            <meshStandardMaterial color="#999999" />
-          </mesh>
         </group>
       ))}
     </group>
@@ -316,10 +185,9 @@ export function GameEnvironment() {
   return (
     <group>
       <Ground />
-      <Buildings count={40} />
-      <Trees count={100} />
-      <Bushes count={200} />
-      <Sidewalks />
+      <Buildings count={20} />
+      <Trees count={30} />
+      <Bushes count={50} />
     </group>
   );
 } 
