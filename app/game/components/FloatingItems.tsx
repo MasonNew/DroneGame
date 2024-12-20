@@ -21,6 +21,18 @@ export function FloatingItems() {
   // Shared geometries
   const sphereGeometry = useMemo(() => new THREE.SphereGeometry(3, 32, 32), []);
 
+  // Memoize sprite material creation
+  const spriteMaterial = useMemo(() => {
+    if (!textureRef.current) return null;
+    return new THREE.SpriteMaterial({
+      map: textureRef.current,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+      sizeAttenuation: true
+    });
+  }, [textureRef.current]);
+
   // Initialize items and load texture
   useEffect(() => {
     // Load texture with optimized settings
@@ -92,9 +104,12 @@ export function FloatingItems() {
       if (glowMaterialRef.current) {
         glowMaterialRef.current.dispose();
       }
+      if (spriteMaterial) {
+        spriteMaterial.dispose();
+      }
       sphereGeometry.dispose();
     };
-  }, [sphereGeometry]);
+  }, [sphereGeometry, spriteMaterial]);
 
   // Optimize animation updates
   useFrame((state, delta) => {
@@ -115,19 +130,7 @@ export function FloatingItems() {
     );
   });
 
-  if (!textureRef.current || !glowMaterialRef.current) return null;
-
-  const spriteMaterial = useMemo(() => (
-    <spriteMaterial
-      map={textureRef.current}
-      transparent={true}
-      opacity={0.9}
-      depthWrite={false}
-      sizeAttenuation={true}
-    />
-  ), [textureRef.current]);
-
-  const glowMaterial = glowMaterialRef.current as THREE.Material;
+  if (!textureRef.current || !glowMaterialRef.current || !spriteMaterial) return null;
 
   return (
     <group>
@@ -142,11 +145,11 @@ export function FloatingItems() {
           rotation={[0, item.phase * item.rotationSpeed, 0]}
         >
           <sprite scale={[5, 5, 5]}>
-            {spriteMaterial}
+            <primitive object={spriteMaterial} attach="material" />
           </sprite>
 
           <mesh geometry={sphereGeometry}>
-            <primitive object={glowMaterial} attach="material" />
+            <primitive object={glowMaterialRef.current} attach="material" />
           </mesh>
         </group>
       ))}
