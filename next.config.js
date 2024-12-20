@@ -4,6 +4,10 @@ const nextConfig = {
   swcMinify: true,
   images: {
     unoptimized: true
+  },
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['@react-three/fiber', '@react-three/drei']
   }
 }
 
