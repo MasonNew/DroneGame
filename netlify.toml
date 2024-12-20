@@ -1,11 +1,10 @@
 [build]
-  command = "npm run build"
+  command = "npm install && npm run build"
   publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
-  PYTHON_VERSION = "3.8.12"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
