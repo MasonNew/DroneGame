@@ -4,11 +4,7 @@ const nextConfig = {
   swcMinify: true,
   images: {
     unoptimized: true
-  },
-  output: 'export',
-  distDir: '.next',
-  trailingSlash: true,
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/' : ''
+  }
 }
 
 module.exports = nextConfig

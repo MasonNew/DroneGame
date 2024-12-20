@@ -1,11 +1,10 @@
 [build]
   command = "npm install --legacy-peer-deps && npm run build"
-  publish = "out"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
-  NEXT_PUBLIC_SITE_URL = "https://dronegame.netlify.app"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
