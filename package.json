@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && touch .next/BUILD_ID",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "clean": "rm -rf .next out",
+    "clean": "rimraf .next out",
     "postinstall": "next telemetry disable"
   },
   "dependencies": {

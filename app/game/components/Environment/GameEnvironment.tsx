@@ -67,24 +67,22 @@ function Bushes({ count = 50 }) {
 // Ground with grass texture
 function Ground() {
   const [hasTexture, setHasTexture] = useState(false);
-  const groundTexture = useTexture('/textures/grass.jpg', 
-    () => setHasTexture(true),
-    () => setHasTexture(false)
-  );
-  const roadTexture = useTexture('/textures/road.jpg',
-    () => {},
-    () => {}
-  );
+  const groundTexture = useTexture('/textures/grass.jpg');
+  const roadTexture = useTexture('/textures/road.jpg');
 
-  // Optimize textures if they load successfully
+  // Handle texture loading
   useEffect(() => {
-    if (hasTexture) {
+    try {
       groundTexture.minFilter = THREE.LinearMipMapLinearFilter;
       groundTexture.magFilter = THREE.LinearFilter;
       groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
       groundTexture.repeat.set(25, 25);
+      setHasTexture(true);
+    } catch (error) {
+      console.warn('Failed to load ground texture:', error);
+      setHasTexture(false);
     }
-  }, [hasTexture, groundTexture]);
+  }, [groundTexture]);
 
   return (
     <group>
