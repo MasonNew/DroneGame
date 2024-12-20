@@ -31,7 +31,7 @@ export function FloatingItems() {
       depthWrite: false,
       sizeAttenuation: true
     });
-  }, [textureRef.current]);
+  }, []);
 
   // Initialize items and load texture
   useEffect(() => {
@@ -132,6 +132,8 @@ export function FloatingItems() {
 
   if (!textureRef.current || !glowMaterialRef.current || !spriteMaterial) return null;
 
+  const glowMaterial = glowMaterialRef.current as THREE.Material;
+
   return (
     <group>
       {items.map(item => (
@@ -149,7 +151,7 @@ export function FloatingItems() {
           </sprite>
 
           <mesh geometry={sphereGeometry}>
-            <primitive object={glowMaterialRef.current} attach="material" />
+            <primitive object={glowMaterial} attach="material" />
           </mesh>
         </group>
       ))}

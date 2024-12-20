@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import React, { useRef, useMemo } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Instances, Instance, useGLTF, useTexture } from '@react-three/drei';
@@ -193,12 +193,12 @@ function Buildings({ count = 30 }) {
                 data.scale[0] * 0.15,
                 data.scale[1] * 0.12,
                 1
-              ];
+              ] as [number, number, number];
               const windowPos = [
                 (col - (data.windowCols - 1) / 2) * (data.scale[0] * 0.2),
                 (row - data.windowRows / 2) * (data.scale[1] * 0.15) + data.scale[1] * 0.3,
                 data.scale[2] / 2 + 0.1
-              ];
+              ] as [number, number, number];
 
               return (
                 <group key={`window-${row}-${col}`} position={windowPos}>
