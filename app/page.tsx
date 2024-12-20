@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Crosshair } from 'lucide-react';
@@ -11,11 +13,11 @@ export default function Home() {
         </div>
         
         <h1 className="text-6xl font-bold tracking-tighter">
-          Welcome to Today&apos;s Game
+          Welcome To Drone Buster!
         </h1>
         
         <p className="text-xl text-gray-400 max-w-md mx-auto">
-          Let&apos;s start playing!
+          Let&apos;s Start Playing! – Take Aim and Shoot Down Those Pesky TikTok Drones That Keep Buzzing Around, Prove You&apos;re the Ultimate Drone Buster!
         </p>
 
         <div className="space-y-4">
@@ -49,9 +51,9 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Animated $buster text */}
+        {/* Animated $BUST text */}
         <div className="mt-16">
-          <div className="cyber-text">$buster</div>
+          <div className="cyber-text">$BUST</div>
         </div>
       </div>
     </div>
