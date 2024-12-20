@@ -156,7 +156,7 @@ export function FloatingItems() {
 
           <mesh>
             <sphereGeometry args={[2.5, 16, 16]} />
-            <primitive object={glowMaterialRef.current} attach="material" />
+            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={0.5} transparent opacity={0.3} />
           </mesh>
         </group>
       ))}
