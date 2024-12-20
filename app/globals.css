@@ -4,51 +4,98 @@
 
 @layer components {
   .cyber-text {
-    @apply font-mono text-2xl font-bold uppercase tracking-widest text-cyan-400 relative;
-    animation: glitch 3s infinite, glow 2s infinite;
+    font-size: 4rem;
+    font-weight: bold;
+    position: relative;
+    text-shadow: 0 0 10px #00ff00;
   }
 
   .cyber-text::before {
-    @apply absolute inset-0 text-fuchsia-400;
-    content: '$buster';
-    animation: glitch 3s infinite reverse;
-    clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
-    transform: translate(-2px);
+    content: '$BUST';
+    position: absolute;
+    left: 0;
+    text-shadow: 2px 0 #ff0000;
+    animation: glitch-1 3s infinite linear;
   }
 
   .cyber-text::after {
-    @apply absolute inset-0 text-yellow-400;
-    content: '$buster';
-    animation: glitch 3s infinite;
-    clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
-    transform: translate(2px);
+    content: '$BUST';
+    position: absolute;
+    left: 0;
+    text-shadow: -2px 0 #0000ff;
+    animation: glitch-2 3s infinite linear;
   }
 }
 
-@keyframes glitch {
+@keyframes glitch-1 {
   0% {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-    transform: translate(0);
+    clip-path: inset(20% -6px 70% 0);
+  }
+  10% {
+    clip-path: inset(80% -6px 5% 0);
   }
   20% {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-    transform: translate(-5px, 5px);
+    clip-path: inset(20% -6px 60% 0);
+  }
+  30% {
+    clip-path: inset(40% -6px 30% 0);
   }
   40% {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-    transform: translate(5px, -5px);
+    clip-path: inset(10% -6px 85% 0);
+  }
+  50% {
+    clip-path: inset(50% -6px 35% 0);
   }
   60% {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-    transform: translate(-5px, 0);
+    clip-path: inset(30% -6px 60% 0);
+  }
+  70% {
+    clip-path: inset(70% -6px 20% 0);
   }
   80% {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-    transform: translate(5px, 0);
+    clip-path: inset(15% -6px 75% 0);
+  }
+  90% {
+    clip-path: inset(55% -6px 35% 0);
   }
   100% {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-    transform: translate(0);
+    clip-path: inset(25% -6px 65% 0);
+  }
+}
+
+@keyframes glitch-2 {
+  0% {
+    clip-path: inset(60% -6px 30% 0);
+  }
+  10% {
+    clip-path: inset(10% -6px 80% 0);
+  }
+  20% {
+    clip-path: inset(40% -6px 50% 0);
+  }
+  30% {
+    clip-path: inset(70% -6px 20% 0);
+  }
+  40% {
+    clip-path: inset(20% -6px 70% 0);
+  }
+  50% {
+    clip-path: inset(30% -6px 60% 0);
+  }
+  60% {
+    clip-path: inset(50% -6px 40% 0);
+  }
+  70% {
+    clip-path: inset(15% -6px 75% 0);
+  }
+  80% {
+    clip-path: inset(65% -6px 25% 0);
+  }
+  90% {
+    clip-path: inset(35% -6px 55% 0);
+  }
+  100% {
+    clip-path: inset(45% -6px 45% 0);
   }
 }
 
