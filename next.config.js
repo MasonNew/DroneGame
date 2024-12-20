@@ -6,8 +6,11 @@ const nextConfig = {
     unoptimized: true
   },
   experimental: {
-    optimizeCss: true,
     optimizePackageImports: ['@react-three/fiber', '@react-three/drei']
+  },
+  webpack: (config) => {
+    config.externals = [...config.externals, { canvas: 'canvas' }];
+    return config;
   }
 }
 
