@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Scene } from './components/Scene';
 import { useGameStore } from './store';
 import { Button } from '@/components/ui/button';
+import { BrandOverlay } from './components/ui/BrandOverlay';
 
 export default function GamePage() {
   const initGame = useGameStore((state) => state.initGame);
@@ -21,6 +22,8 @@ export default function GamePage() {
           New Game
         </Button>
       </div>
+
+      <BrandOverlay />
     </div>
   );
 }
