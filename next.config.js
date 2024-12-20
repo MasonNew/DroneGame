@@ -5,9 +5,6 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
-  experimental: {
-    optimizePackageImports: ['@react-three/fiber', '@react-three/drei']
-  },
   webpack: (config) => {
     config.externals = [...config.externals, { canvas: 'canvas' }];
     return config;

@@ -9,8 +9,6 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-  [plugins.inputs]
-    skipBuildCache = true
 
 [[redirects]]
   from = "/*"
