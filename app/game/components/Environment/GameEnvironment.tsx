@@ -4,18 +4,59 @@ import { useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Instances, Instance } from '@react-three/drei';
+import { useGameStore } from '../../store';
 
-// Create instanced meshes for better performance
-function Trees({ count = 30 }) {
+// Simplified environment for login screen
+function SimpleEnvironment() {
+  return (
+    <group>
+      {/* Ground */}
+      <mesh rotation-x={-Math.PI / 2} receiveShadow>
+        <planeGeometry args={[400, 400]} />
+        <meshStandardMaterial 
+          color="#2d5a27"
+          roughness={0.8}
+          metalness={0.1}
+        />
+      </mesh>
+
+      {/* Simple decorative elements */}
+      {Array.from({ length: 10 }).map((_, i) => {
+        const angle = (i / 10) * Math.PI * 2;
+        const radius = 30;
+        return (
+          <mesh
+            key={i}
+            position={[
+              Math.cos(angle) * radius,
+              10,
+              Math.sin(angle) * radius
+            ]}
+            castShadow
+          >
+            <boxGeometry args={[8, 20, 8]} />
+            <meshStandardMaterial
+              color="#666666"
+              metalness={0.5}
+              roughness={0.5}
+            />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+// Optimized trees with reduced detail
+function Trees({ count = 20 }) {
   const positions = useRef(
     Array.from({ length: count }, () => ({
       position: [
-        Math.random() * 200 - 100,
+        Math.random() * 160 - 80,
         0,
-        Math.random() * 200 - 100
+        Math.random() * 160 - 80
       ] as [number, number, number],
-      scale: 0.8 + Math.random() * 0.4,
-      rotation: Math.random() * Math.PI
+      scale: 0.8 + Math.random() * 0.4
     }))
   ).current;
 
@@ -36,67 +77,12 @@ function Trees({ count = 30 }) {
   );
 }
 
-// Instanced bushes
-function Bushes({ count = 50 }) {
-  const positions = useRef(
-    Array.from({ length: count }, () => ({
-      position: [
-        Math.random() * 180 - 90,
-        0.5,
-        Math.random() * 180 - 90
-      ] as [number, number, number],
-      scale: 0.6 + Math.random() * 0.4
-    }))
-  ).current;
-
-  return (
-    <Instances limit={count}>
-      <sphereGeometry args={[1, 6, 6]} />
-      <meshStandardMaterial color="#2d5a27" />
-      {positions.map((data, i) => (
-        <Instance
-          key={i}
-          position={data.position}
-          scale={data.scale}
-        />
-      ))}
-    </Instances>
-  );
-}
-
-// Ground with solid color
-function Ground() {
-  return (
-    <group>
-      {/* Main ground */}
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[400, 400, 32, 32]} />
-        <meshStandardMaterial 
-          color="#2d5a27"
-          roughness={0.8}
-          metalness={0.1}
-        />
-      </mesh>
-
-      {/* Road */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.01, 0]} receiveShadow>
-        <planeGeometry args={[10, 200, 1, 16]} />
-        <meshStandardMaterial 
-          color="#333333"
-          roughness={0.7}
-          metalness={0.2}
-        />
-      </mesh>
-    </group>
-  );
-}
-
-// Buildings using instancing for better performance
-function Buildings({ count = 20 }) {
+// Optimized buildings with fewer lights
+function Buildings({ count = 15 }) {
   const positions = useRef(
     Array.from({ length: count }, () => {
       const angle = Math.random() * Math.PI * 2;
-      const radius = 30 + Math.random() * 60;
+      const radius = 30 + Math.random() * 40;
       return {
         position: [
           Math.cos(angle) * radius,
@@ -104,13 +90,11 @@ function Buildings({ count = 20 }) {
           Math.sin(angle) * radius
         ] as [number, number, number],
         scale: [
-          10 + Math.random() * 10,
-          20 + Math.random() * 30,
-          10 + Math.random() * 10
+          8 + Math.random() * 8,
+          15 + Math.random() * 20,
+          8 + Math.random() * 8
         ] as [number, number, number],
-        rotation: Math.random() * Math.PI * 2,
-        windowRows: Math.floor(Math.random() * 2) + 3,
-        windowCols: Math.floor(Math.random() * 2) + 2
+        rotation: Math.random() * Math.PI * 2
       };
     })
   ).current;
@@ -131,51 +115,62 @@ function Buildings({ count = 20 }) {
               roughness={0.5}
             />
           </mesh>
-
-          {/* Windows - Front face only for better performance */}
-          {Array.from({ length: data.windowRows }).map((_, row) =>
-            Array.from({ length: data.windowCols }).map((_, col) => (
-              <group
-                key={`front-${row}-${col}`}
-                position={[
-                  (col - (data.windowCols - 1) / 2) * (data.scale[0] * 0.2),
-                  (row - data.windowRows / 2) * (data.scale[1] * 0.15) + data.scale[1] * 0.3,
-                  data.scale[2] / 2 + 0.1
-                ]}
-              >
-                <mesh>
-                  <boxGeometry args={[data.scale[0] * 0.13, data.scale[1] * 0.1, 0.1]} />
-                  <meshPhysicalMaterial
-                    color="#88ccff"
-                    metalness={0.9}
-                    roughness={0.1}
-                    transparent={true}
-                    opacity={0.7}
-                    envMapIntensity={1}
-                  />
-                </mesh>
-                <pointLight
-                  color="#ffaa44"
-                  intensity={0.3}
-                  distance={3}
-                  decay={2}
-                />
-              </group>
-            ))
-          )}
+          {/* Single window light per building */}
+          <mesh position={[0, data.scale[1] * 0.3, data.scale[2] / 2 + 0.1]}>
+            <boxGeometry args={[data.scale[0] * 0.3, data.scale[1] * 0.2, 0.1]} />
+            <meshStandardMaterial
+              color="#88ccff"
+              emissive="#88ccff"
+              emissiveIntensity={0.5}
+              transparent
+              opacity={0.7}
+            />
+          </mesh>
         </group>
       ))}
     </group>
   );
 }
 
+// Ground with solid color
+function Ground() {
+  return (
+    <group>
+      <mesh rotation-x={-Math.PI / 2} receiveShadow>
+        <planeGeometry args={[400, 400]} />
+        <meshStandardMaterial 
+          color="#2d5a27"
+          roughness={0.8}
+          metalness={0.1}
+        />
+      </mesh>
+
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.01, 0]} receiveShadow>
+        <planeGeometry args={[10, 200]} />
+        <meshStandardMaterial 
+          color="#333333"
+          roughness={0.7}
+          metalness={0.2}
+        />
+      </mesh>
+    </group>
+  );
+}
+
 export function GameEnvironment() {
+  const isLoggedIn = useGameStore((state) => state.isLoggedIn);
+
+  // Render simplified environment for login screen
+  if (!isLoggedIn) {
+    return <SimpleEnvironment />;
+  }
+
+  // Render full environment for gameplay
   return (
     <group>
       <Ground />
-      <Buildings count={20} />
-      <Trees count={30} />
-      <Bushes count={50} />
+      <Buildings count={15} />
+      <Trees count={20} />
     </group>
   );
 } 
