@@ -1,11 +1,14 @@
 [build]
-  command = "npm install && npm run build"
-  publish = "out"
+  command = "npm install --legacy-peer-deps && npm run build"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
-  NPM_FLAGS = "--legacy-peer-deps --force"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [[headers]]
   for = "/*"
