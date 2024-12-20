@@ -1,7 +1,7 @@
 'use client';
 
 import { useFrame } from '@react-three/fiber';
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import * as THREE from 'three';
 
 interface FloatingItem {
@@ -19,40 +19,29 @@ export function FloatingItems() {
   const glowMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   const itemsRef = useRef<FloatingItem[]>([]);
 
-  // Initialize items and load texture
-  useEffect(() => {
-    // Load texture
-    const textureLoader = new THREE.TextureLoader();
-    textureLoader.load('/pump.fun.png', (texture) => {
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      textureRef.current = texture;
-      
-      // Create items once texture is loaded
-      const newItems: FloatingItem[] = [];
-      const itemCount = 8; // Reduced count for better performance
-      
-      for (let i = 0; i < itemCount; i++) {
-        newItems.push({
-          id: `item-${i}`,
-          position: new THREE.Vector3(
-            Math.random() * 80 - 40,  // Reduced range
-            15 + Math.random() * 15,  // Reduced height
-            Math.random() * 80 - 40   // Reduced range
-          ),
-          rotationSpeed: 0.3 + Math.random() * 0.3,  // Reduced speed
-          floatSpeed: 0.8 + Math.random() * 0.3,     // Reduced speed
-          floatHeight: 0.8 + Math.random() * 0.3,    // Reduced range
-          phase: Math.random() * Math.PI * 2
-        });
-      }
-      
-      setItems(newItems);
-      itemsRef.current = newItems;
-    });
+  // Create items function
+  const createItems = useCallback((count: number) => {
+    const newItems: FloatingItem[] = [];
+    for (let i = 0; i < count; i++) {
+      newItems.push({
+        id: `item-${i}`,
+        position: new THREE.Vector3(
+          Math.random() * 80 - 40,
+          15 + Math.random() * 15,
+          Math.random() * 80 - 40
+        ),
+        rotationSpeed: 0.3 + Math.random() * 0.3,
+        floatSpeed: 0.8 + Math.random() * 0.3,
+        floatHeight: 0.8 + Math.random() * 0.3,
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+    return newItems;
+  }, []);
 
-    // Create optimized glow shader material
-    const glowMaterial = new THREE.ShaderMaterial({
+  // Create glow material
+  const createGlowMaterial = useCallback(() => {
+    return new THREE.ShaderMaterial({
       uniforms: {
         glowColor: { value: new THREE.Color(0x00ffff) },
         viewVector: { value: new THREE.Vector3() }
@@ -80,7 +69,22 @@ export function FloatingItems() {
       transparent: true,
       depthWrite: false
     });
+  }, []);
 
+  // Initialize items and load texture
+  useEffect(() => {
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load('/pump.fun.png', (texture) => {
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      textureRef.current = texture;
+      
+      const newItems = createItems(8);
+      setItems(newItems);
+      itemsRef.current = newItems;
+    });
+
+    const glowMaterial = createGlowMaterial();
     glowMaterialRef.current = glowMaterial;
 
     return () => {
@@ -91,34 +95,30 @@ export function FloatingItems() {
         glowMaterialRef.current.dispose();
       }
     };
+  }, [createItems, createGlowMaterial]);
+
+  // Update function for animation
+  const updateItems = useCallback((delta: number) => {
+    return itemsRef.current.map(item => ({
+      ...item,
+      phase: (item.phase + delta * item.floatSpeed) % (Math.PI * 2)
+    }));
   }, []);
 
   // Animate items with optimized performance
   useFrame((state, delta) => {
-    const camera = state.camera;
-    
-    // Update glow effect view vector
     if (glowMaterialRef.current) {
-      glowMaterialRef.current.uniforms.viewVector.value.copy(camera.position);
+      glowMaterialRef.current.uniforms.viewVector.value.copy(state.camera.position);
     }
 
-    // Update items directly without state changes for better performance
-    itemsRef.current = itemsRef.current.map(item => ({
-      ...item,
-      phase: (item.phase + delta * item.floatSpeed) % (Math.PI * 2)
-    }));
+    itemsRef.current = updateItems(delta);
 
-    // Only update state every few frames
-    if (Math.random() < 0.1) { // 10% chance to update per frame
+    if (Math.random() < 0.1) {
       setItems([...itemsRef.current]);
     }
   });
 
-  if (!textureRef.current || !glowMaterialRef.current) return null;
-
-  const glowMaterial = glowMaterialRef.current as THREE.Material;
-
-  // Use instancing for better performance
+  // Memoize instance positions
   const instancePositions = useMemo(() => {
     const array = new Float32Array(items.length * 3);
     items.forEach((item, i) => {
@@ -128,7 +128,9 @@ export function FloatingItems() {
       array[i3 + 2] = item.position.z;
     });
     return array;
-  }, [items.length]);
+  }, [items]);
+
+  if (!textureRef.current || !glowMaterialRef.current) return null;
 
   return (
     <group>
@@ -154,7 +156,7 @@ export function FloatingItems() {
 
           <mesh>
             <sphereGeometry args={[2.5, 16, 16]} />
-            <primitive object={glowMaterial} attach="material" />
+            <primitive object={glowMaterialRef.current} attach="material" />
           </mesh>
         </group>
       ))}
