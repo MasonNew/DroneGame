@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'Drone Buster',
   description: 'Take aim and shoot down those pesky TikTok drones in this action-packed game!',
   icons: {
-    icon: '/drone.jpg',
+    icon: '/crosshair.png',
   },
 };
 
