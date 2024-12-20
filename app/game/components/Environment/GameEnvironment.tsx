@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { Instances, Instance, useGLTF, useTexture } from '@react-three/drei';
+import { Instances, Instance } from '@react-three/drei';
 
 // Create instanced meshes for better performance
 function Trees({ count = 30 }) {
@@ -64,38 +64,21 @@ function Bushes({ count = 50 }) {
   );
 }
 
-// Ground with grass texture
+// Ground with solid color
 function Ground() {
-  const [hasTexture, setHasTexture] = useState(false);
-  const groundTexture = useTexture('/textures/grass.jpg');
-  const roadTexture = useTexture('/textures/road.jpg');
-
-  // Handle texture loading
-  useEffect(() => {
-    try {
-      groundTexture.minFilter = THREE.LinearMipMapLinearFilter;
-      groundTexture.magFilter = THREE.LinearFilter;
-      groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
-      groundTexture.repeat.set(25, 25);
-      setHasTexture(true);
-    } catch (error) {
-      console.warn('Failed to load ground texture:', error);
-      setHasTexture(false);
-    }
-  }, [groundTexture]);
-
   return (
     <group>
+      {/* Main ground */}
       <mesh rotation-x={-Math.PI / 2} receiveShadow>
         <planeGeometry args={[400, 400, 32, 32]} />
         <meshStandardMaterial 
-          map={hasTexture ? groundTexture : null}
-          color={hasTexture ? '#ffffff' : '#2d5a27'}
+          color="#2d5a27"
           roughness={0.8}
           metalness={0.1}
         />
       </mesh>
 
+      {/* Road */}
       <mesh rotation-x={-Math.PI / 2} position={[0, 0.01, 0]} receiveShadow>
         <planeGeometry args={[10, 200, 1, 16]} />
         <meshStandardMaterial 
