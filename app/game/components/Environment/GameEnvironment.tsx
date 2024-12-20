@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Instances, Instance, useGLTF, useTexture } from '@react-three/drei';
@@ -66,26 +66,33 @@ function Bushes({ count = 50 }) {
 
 // Ground with grass texture
 function Ground() {
-  const groundTexture = useTexture('/textures/grass.jpg');
-  const roadTexture = useTexture('/textures/road.jpg');
+  const [hasTexture, setHasTexture] = useState(false);
+  const groundTexture = useTexture('/textures/grass.jpg', 
+    () => setHasTexture(true),
+    () => setHasTexture(false)
+  );
+  const roadTexture = useTexture('/textures/road.jpg',
+    () => {},
+    () => {}
+  );
 
-  // Optimize textures
-  groundTexture.minFilter = THREE.LinearMipMapLinearFilter;
-  groundTexture.magFilter = THREE.LinearFilter;
-  groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
-  groundTexture.repeat.set(25, 25);
-
-  roadTexture.minFilter = THREE.LinearMipMapLinearFilter;
-  roadTexture.magFilter = THREE.LinearFilter;
-  roadTexture.wrapS = roadTexture.wrapT = THREE.RepeatWrapping;
-  roadTexture.repeat.set(10, 1);
+  // Optimize textures if they load successfully
+  useEffect(() => {
+    if (hasTexture) {
+      groundTexture.minFilter = THREE.LinearMipMapLinearFilter;
+      groundTexture.magFilter = THREE.LinearFilter;
+      groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+      groundTexture.repeat.set(25, 25);
+    }
+  }, [hasTexture, groundTexture]);
 
   return (
     <group>
       <mesh rotation-x={-Math.PI / 2} receiveShadow>
         <planeGeometry args={[400, 400, 32, 32]} />
         <meshStandardMaterial 
-          map={groundTexture}
+          map={hasTexture ? groundTexture : null}
+          color={hasTexture ? '#ffffff' : '#2d5a27'}
           roughness={0.8}
           metalness={0.1}
         />
@@ -94,7 +101,7 @@ function Ground() {
       <mesh rotation-x={-Math.PI / 2} position={[0, 0.01, 0]} receiveShadow>
         <planeGeometry args={[10, 200, 1, 16]} />
         <meshStandardMaterial 
-          map={roadTexture}
+          color="#333333"
           roughness={0.7}
           metalness={0.2}
         />
