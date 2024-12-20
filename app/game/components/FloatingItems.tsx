@@ -1,7 +1,7 @@
 'use client';
 
 import { useFrame } from '@react-three/fiber';
-import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
 import * as THREE from 'three';
 
 interface FloatingItem {
@@ -15,39 +15,46 @@ interface FloatingItem {
 
 export function FloatingItems() {
   const [items, setItems] = useState<FloatingItem[]>([]);
-  const [isClient, setIsClient] = useState(false);
   const textureRef = useRef<THREE.Texture | null>(null);
   const glowMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
-  const itemsRef = useRef<FloatingItem[]>([]);
 
-  // Check if we're on the client
+  // Shared geometries
+  const sphereGeometry = useMemo(() => new THREE.SphereGeometry(3, 32, 32), []);
+
+  // Initialize items and load texture
   useEffect(() => {
-    setIsClient(true);
-  }, []);
+    // Load texture with optimized settings
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load('/pump.fun.png', (texture) => {
+      texture.minFilter = THREE.LinearMipMapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.generateMipmaps = true;
+      textureRef.current = texture;
+      
+      // Create items once texture is loaded
+      const newItems: FloatingItem[] = [];
+      const itemCount = 15;
+      
+      for (let i = 0; i < itemCount; i++) {
+        newItems.push({
+          id: `item-${i}`,
+          position: new THREE.Vector3(
+            Math.random() * 100 - 50,
+            20 + Math.random() * 20,
+            Math.random() * 100 - 50
+          ),
+          rotationSpeed: 0.5 + Math.random() * 0.5,
+          floatSpeed: 1.0 + Math.random() * 0.5,
+          floatHeight: 1.0 + Math.random() * 0.5,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+      
+      setItems(newItems);
+    });
 
-  // Create items function
-  const createItems = useCallback((count: number) => {
-    const newItems: FloatingItem[] = [];
-    for (let i = 0; i < count; i++) {
-      newItems.push({
-        id: `item-${i}`,
-        position: new THREE.Vector3(
-          Math.random() * 80 - 40,
-          15 + Math.random() * 15,
-          Math.random() * 80 - 40
-        ),
-        rotationSpeed: 0.3 + Math.random() * 0.3,
-        floatSpeed: 0.8 + Math.random() * 0.3,
-        floatHeight: 0.8 + Math.random() * 0.3,
-        phase: Math.random() * Math.PI * 2
-      });
-    }
-    return newItems;
-  }, []);
-
-  // Create glow material
-  const createGlowMaterial = useCallback(() => {
-    return new THREE.ShaderMaterial({
+    // Create optimized glow shader material
+    const glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         glowColor: { value: new THREE.Color(0x00ffff) },
         viewVector: { value: new THREE.Vector3() }
@@ -58,7 +65,7 @@ export function FloatingItems() {
         void main() {
           vec3 vNormal = normalize(normalMatrix * normal);
           vec3 vNormel = normalize(normalMatrix * viewVector);
-          intensity = pow(0.6 - dot(vNormal, vNormel), 1.5);
+          intensity = pow(0.8 - dot(vNormal, vNormel), 2.0);
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
@@ -67,7 +74,7 @@ export function FloatingItems() {
         varying float intensity;
         void main() {
           vec3 glow = glowColor * intensity;
-          gl_FragColor = vec4(glow, min(intensity, 0.6));
+          gl_FragColor = vec4(glow, min(intensity, 0.8));
         }
       `,
       side: THREE.FrontSide,
@@ -75,27 +82,8 @@ export function FloatingItems() {
       transparent: true,
       depthWrite: false
     });
-  }, []);
 
-  // Initialize items and create texture
-  useEffect(() => {
-    if (!isClient) return;
-
-    const newItems = createItems(8);
-    setItems(newItems);
-    itemsRef.current = newItems;
-
-    const glowMaterial = createGlowMaterial();
     glowMaterialRef.current = glowMaterial;
-
-    // Create a simple colored texture
-    const texture = new THREE.DataTexture(
-      new Uint8Array([0, 255, 255, 255]), // RGBA for cyan
-      1, 1, // width, height
-      THREE.RGBAFormat
-    );
-    texture.needsUpdate = true;
-    textureRef.current = texture;
 
     return () => {
       if (textureRef.current) {
@@ -104,31 +92,42 @@ export function FloatingItems() {
       if (glowMaterialRef.current) {
         glowMaterialRef.current.dispose();
       }
+      sphereGeometry.dispose();
     };
-  }, [isClient, createItems, createGlowMaterial]);
+  }, [sphereGeometry]);
 
-  // Update function for animation
-  const updateItems = useCallback((delta: number) => {
-    return itemsRef.current.map(item => ({
-      ...item,
-      phase: (item.phase + delta * item.floatSpeed) % (Math.PI * 2)
-    }));
-  }, []);
-
-  // Animate items with optimized performance
+  // Optimize animation updates
   useFrame((state, delta) => {
+    const camera = state.camera;
+    
     if (glowMaterialRef.current) {
-      glowMaterialRef.current.uniforms.viewVector.value.copy(state.camera.position);
+      glowMaterialRef.current.uniforms.viewVector.value.subVectors(
+        camera.position,
+        new THREE.Vector3(0, 0, 0)
+      );
     }
 
-    itemsRef.current = updateItems(delta);
-
-    if (Math.random() < 0.1) {
-      setItems([...itemsRef.current]);
-    }
+    setItems(prevItems => 
+      prevItems.map(item => ({
+        ...item,
+        phase: (item.phase + delta * item.floatSpeed) % (Math.PI * 2)
+      }))
+    );
   });
 
-  if (!isClient || !textureRef.current || !glowMaterialRef.current) return null;
+  if (!textureRef.current || !glowMaterialRef.current) return null;
+
+  const spriteMaterial = useMemo(() => (
+    <spriteMaterial
+      map={textureRef.current}
+      transparent={true}
+      opacity={0.9}
+      depthWrite={false}
+      sizeAttenuation={true}
+    />
+  ), [textureRef.current]);
+
+  const glowMaterial = glowMaterialRef.current as THREE.Material;
 
   return (
     <group>
@@ -142,9 +141,12 @@ export function FloatingItems() {
           ]}
           rotation={[0, item.phase * item.rotationSpeed, 0]}
         >
-          <mesh>
-            <sphereGeometry args={[2.5, 16, 16]} />
-            <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={0.5} transparent opacity={0.3} />
+          <sprite scale={[5, 5, 5]}>
+            {spriteMaterial}
+          </sprite>
+
+          <mesh geometry={sphereGeometry}>
+            <primitive object={glowMaterial} attach="material" />
           </mesh>
         </group>
       ))}

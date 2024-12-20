@@ -1,56 +1,29 @@
 'use client';
 
-import { Canvas } from '@react-three/fiber';
-import { GameEnvironment } from './components/Environment/GameEnvironment';
-import { GameUI } from './components/GameUI';
-import { LoginModal } from './components/ui/LoginModal';
-import { Leaderboard } from './components/ui/Leaderboard';
+import { useEffect } from 'react';
+import { Scene } from './components/Scene';
 import { useGameStore } from './store';
-import { PlayerController } from './components/PlayerController';
-import { Weapon } from './components/Weapon';
-import { Scope } from './components/Scope';
-import { GameTooltip } from './components/GameTooltip';
-import { WeatherEffects } from './components/effects/WeatherEffects';
-import { FloatingItems } from './components/FloatingItems';
-import { WeaponHUD } from './components/ui/WeaponHUD';
-import { MissionHUD } from './components/ui/MissionHUD';
+import { Button } from '@/components/ui/button';
+import { BrandOverlay } from './components/ui/BrandOverlay';
 
 export default function GamePage() {
-  const isLoggedIn = useGameStore((state) => state.isLoggedIn);
+  const initGame = useGameStore((state) => state.initGame);
+
+  useEffect(() => {
+    initGame();
+  }, [initGame]);
 
   return (
-    <main className="w-screen h-screen relative">
-      <Canvas shadows>
-        <ambientLight intensity={0.5} />
-        <directionalLight
-          position={[50, 50, 25]}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-          shadow-camera-far={100}
-          shadow-camera-left={-50}
-          shadow-camera-right={50}
-          shadow-camera-top={50}
-          shadow-camera-bottom={-50}
-        />
-        <GameEnvironment />
-        {isLoggedIn && (
-          <>
-            <PlayerController />
-            <Weapon />
-            <Scope />
-            <WeatherEffects />
-            <FloatingItems />
-          </>
-        )}
-      </Canvas>
+    <div className="relative w-full h-screen">
+      <Scene />
       
-      <GameUI />
-      <GameTooltip />
-      <WeaponHUD />
-      <MissionHUD />
-      <Leaderboard />
-      <LoginModal />
-    </main>
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-10">
+        <Button variant="outline" onClick={initGame}>
+          New Game
+        </Button>
+      </div>
+
+      <BrandOverlay />
+    </div>
   );
 }

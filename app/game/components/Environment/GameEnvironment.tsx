@@ -1,63 +1,23 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useMemo } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { Instances, Instance } from '@react-three/drei';
-import { useGameStore } from '../../store';
+import { Instances, Instance, useGLTF, useTexture } from '@react-three/drei';
 
-// Simplified environment for login screen
-function SimpleEnvironment() {
-  return (
-    <group>
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[400, 400]} />
-        <meshStandardMaterial 
-          color="#2d5a27"
-          roughness={0.8}
-          metalness={0.1}
-        />
-      </mesh>
-
-      {/* Simple decorative elements */}
-      {Array.from({ length: 10 }).map((_, i) => {
-        const angle = (i / 10) * Math.PI * 2;
-        const radius = 30;
-        return (
-          <mesh
-            key={i}
-            position={[
-              Math.cos(angle) * radius,
-              10,
-              Math.sin(angle) * radius
-            ]}
-            castShadow
-          >
-            <boxGeometry args={[8, 20, 8]} />
-            <meshStandardMaterial
-              color="#666666"
-              metalness={0.5}
-              roughness={0.5}
-            />
-          </mesh>
-        );
-      })}
-    </group>
-  );
-}
-
-// Optimized trees with instancing
-function Trees({ count = 20 }) {
-  const positions = useRef(
+// Create instanced meshes for better performance
+function Trees({ count = 50 }) {
+  const positions = useMemo(() => 
     Array.from({ length: count }, () => ({
       position: [
-        Math.random() * 160 - 80,
+        Math.random() * 200 - 100,
         0,
-        Math.random() * 160 - 80
+        Math.random() * 200 - 100
       ] as [number, number, number],
-      scale: 0.8 + Math.random() * 0.4
-    }))
-  ).current;
+      scale: 0.8 + Math.random() * 0.4,
+      rotation: Math.random() * Math.PI
+    })), [count]
+  );
 
   return (
     <Instances limit={count}>
@@ -67,7 +27,7 @@ function Trees({ count = 20 }) {
         <group key={i} position={data.position}>
           <Instance scale={[1, data.scale * 2, 1]} />
           <mesh position={[0, data.scale * 2, 0]}>
-            <coneGeometry args={[1.5, 3 * data.scale, 6]} />
+            <coneGeometry args={[1.5, 3 * data.scale, 8]} />
             <meshStandardMaterial color="#1a472a" />
           </mesh>
         </group>
@@ -76,12 +36,94 @@ function Trees({ count = 20 }) {
   );
 }
 
-// Buildings with window lights
-function Buildings({ count = 15 }) {
-  const positions = useRef(
+// Instanced bushes with optimized rendering
+function Bushes({ count = 100 }) {
+  const positions = useMemo(() => 
+    Array.from({ length: count }, () => ({
+      position: [
+        Math.random() * 180 - 90,
+        0.5,
+        Math.random() * 180 - 90
+      ] as [number, number, number],
+      scale: 0.6 + Math.random() * 0.4
+    })), [count]
+  );
+
+  return (
+    <Instances limit={count}>
+      <sphereGeometry args={[1, 8, 8]} />
+      <meshStandardMaterial color="#2d5a27" />
+      {positions.map((data, i) => (
+        <Instance
+          key={i}
+          position={data.position}
+          scale={data.scale}
+        />
+      ))}
+    </Instances>
+  );
+}
+
+// Ground with optimized textures
+function Ground() {
+  const groundTexture = useTexture('/textures/grass.jpg');
+  const roadTexture = useTexture('/textures/road.jpg');
+
+  useMemo(() => {
+    groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+    groundTexture.repeat.set(50, 50);
+    groundTexture.minFilter = THREE.LinearMipMapLinearFilter;
+    groundTexture.magFilter = THREE.LinearFilter;
+    groundTexture.generateMipmaps = true;
+
+    roadTexture.wrapS = roadTexture.wrapT = THREE.RepeatWrapping;
+    roadTexture.repeat.set(20, 1);
+    roadTexture.minFilter = THREE.LinearMipMapLinearFilter;
+    roadTexture.magFilter = THREE.LinearFilter;
+    roadTexture.generateMipmaps = true;
+  }, [groundTexture, roadTexture]);
+
+  const groundMaterial = useMemo(() => (
+    <meshStandardMaterial 
+      map={groundTexture}
+      roughness={0.8}
+      metalness={0.1}
+    />
+  ), [groundTexture]);
+
+  const roadMaterial = useMemo(() => (
+    <meshStandardMaterial 
+      map={roadTexture}
+      roughness={0.7}
+      metalness={0.2}
+    />
+  ), [roadTexture]);
+
+  return (
+    <group>
+      <mesh rotation-x={-Math.PI / 2} receiveShadow>
+        <planeGeometry args={[400, 400]} />
+        {groundMaterial}
+      </mesh>
+
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.01, 0]} receiveShadow>
+        <planeGeometry args={[10, 200]} />
+        {roadMaterial}
+      </mesh>
+      <mesh rotation-x={-Math.PI / 2} rotation-z={Math.PI / 2} position={[0, 0.01, 0]} receiveShadow>
+        <planeGeometry args={[10, 200]} />
+        {roadMaterial}
+      </mesh>
+    </group>
+  );
+}
+
+// Buildings with optimized geometry and materials
+function Buildings({ count = 30 }) {
+  const positions = useMemo(() => 
     Array.from({ length: count }, () => {
       const angle = Math.random() * Math.PI * 2;
-      const radius = 30 + Math.random() * 40;
+      const radius = 30 + Math.random() * 60;
       return {
         position: [
           Math.cos(angle) * radius,
@@ -89,14 +131,48 @@ function Buildings({ count = 15 }) {
           Math.sin(angle) * radius
         ] as [number, number, number],
         scale: [
-          8 + Math.random() * 8,
-          15 + Math.random() * 20,
-          8 + Math.random() * 8
+          10 + Math.random() * 10,
+          20 + Math.random() * 30,
+          10 + Math.random() * 10
         ] as [number, number, number],
-        rotation: Math.random() * Math.PI * 2
+        rotation: Math.random() * Math.PI * 2,
+        windowRows: Math.floor(Math.random() * 3) + 4,
+        windowCols: Math.floor(Math.random() * 2) + 3
       };
-    })
-  ).current;
+    }), [count]
+  );
+
+  // Shared materials
+  const buildingMaterial = useMemo(() => (
+    <meshStandardMaterial
+      color="#666666"
+      metalness={0.5}
+      roughness={0.5}
+    />
+  ), []);
+
+  const windowFrameMaterial = useMemo(() => (
+    <meshStandardMaterial
+      color="#333333"
+      metalness={0.8}
+      roughness={0.2}
+    />
+  ), []);
+
+  const windowGlassMaterial = useMemo(() => (
+    <meshPhysicalMaterial
+      color="#88ccff"
+      metalness={0.9}
+      roughness={0.1}
+      transparent={true}
+      opacity={0.7}
+      envMapIntensity={1.5}
+    />
+  ), []);
+
+  // Shared geometries
+  const windowFrameGeometry = useMemo(() => new THREE.BoxGeometry(1, 1, 0.2), []);
+  const windowGlassGeometry = useMemo(() => new THREE.BoxGeometry(1, 1, 0.1), []);
 
   return (
     <group>
@@ -106,106 +182,81 @@ function Buildings({ count = 15 }) {
           position={data.position}
           rotation-y={data.rotation}
         >
-          {/* Building collider */}
-          <mesh castShadow receiveShadow name="building-collider">
+          <mesh castShadow receiveShadow>
             <boxGeometry args={data.scale} />
-            <meshStandardMaterial
-              color="#666666"
-              metalness={0.5}
-              roughness={0.5}
-            />
+            {buildingMaterial}
           </mesh>
-          {/* Window lights */}
-          <mesh position={[0, data.scale[1] * 0.3, data.scale[2] / 2 + 0.1]}>
-            <boxGeometry args={[data.scale[0] * 0.3, data.scale[1] * 0.2, 0.1]} />
-            <meshStandardMaterial
-              color="#88ccff"
-              emissive="#88ccff"
-              emissiveIntensity={0.5}
-              transparent
-              opacity={0.7}
-            />
-          </mesh>
+
+          {Array.from({ length: data.windowRows }).map((_, row) =>
+            Array.from({ length: data.windowCols }).map((_, col) => {
+              const windowScale = [
+                data.scale[0] * 0.15,
+                data.scale[1] * 0.12,
+                1
+              ];
+              const windowPos = [
+                (col - (data.windowCols - 1) / 2) * (data.scale[0] * 0.2),
+                (row - data.windowRows / 2) * (data.scale[1] * 0.15) + data.scale[1] * 0.3,
+                data.scale[2] / 2 + 0.1
+              ];
+
+              return (
+                <group key={`window-${row}-${col}`} position={windowPos}>
+                  <mesh
+                    geometry={windowFrameGeometry}
+                    scale={windowScale}
+                    castShadow
+                  >
+                    {windowFrameMaterial}
+                  </mesh>
+                  <mesh
+                    geometry={windowGlassGeometry}
+                    scale={[windowScale[0] * 0.9, windowScale[1] * 0.9, 1]}
+                  >
+                    {windowGlassMaterial}
+                  </mesh>
+                  <pointLight
+                    color="#ffaa44"
+                    intensity={0.5}
+                    distance={5}
+                    decay={2}
+                  />
+                </group>
+              );
+            })
+          )}
         </group>
       ))}
     </group>
   );
 }
 
-// Ground with road
-function Ground() {
-  return (
-    <group>
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[400, 400]} />
-        <meshStandardMaterial 
-          color="#2d5a27"
-          roughness={0.8}
-          metalness={0.1}
-        />
-      </mesh>
-
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.01, 0]} receiveShadow>
-        <planeGeometry args={[10, 200]} />
-        <meshStandardMaterial 
-          color="#333333"
-          roughness={0.7}
-          metalness={0.2}
-        />
-      </mesh>
-    </group>
-  );
-}
-
-// Progressive loading game environment
-function GameplayEnvironment() {
-  const [loadedStage, setLoadedStage] = useState(0);
-
-  useEffect(() => {
-    // Progressive loading stages
-    const loadStages = () => {
-      setLoadedStage(prev => {
-        const next = prev + 1;
-        if (next < 4) {
-          setTimeout(loadStages, 300); // Load next stage after 300ms
-        }
-        return next;
-      });
-    };
-
-    setTimeout(loadStages, 100); // Start loading after initial render
-
-    return () => {
-      setLoadedStage(0);
-    };
-  }, []);
+// Optimized sidewalks
+const SidewalksComponent = () => {
+  const geometry = useMemo(() => new THREE.BoxGeometry(12, 0.2, 100), []);
+  const material = useMemo(() => new THREE.MeshStandardMaterial({ color: "#999999" }), []);
 
   return (
     <group>
-      {/* Ground - Always loaded */}
-      <Ground />
-
-      {/* Buildings - Stage 1 */}
-      {loadedStage >= 1 && (
-        <Buildings count={15} />
-      )}
-
-      {/* Trees - Stage 2 */}
-      {loadedStage >= 2 && (
-        <Trees count={20} />
-      )}
+      {[0, 90, 180, 270].map((angle, i) => (
+        <group key={i} rotation-y={angle * Math.PI / 180}>
+          <mesh position={[0, 0.1, 40]} receiveShadow geometry={geometry} material={material} />
+        </group>
+      ))}
     </group>
   );
-}
+};
+
+const Sidewalks = React.memo(SidewalksComponent);
 
 export function GameEnvironment() {
-  const isLoggedIn = useGameStore((state) => state.isLoggedIn);
-
-  // Render simplified environment for login screen
-  if (!isLoggedIn) {
-    return <SimpleEnvironment />;
-  }
-
-  // Render progressively loading environment for gameplay
-  return <GameplayEnvironment />;
+  return (
+    <group>
+      <Ground />
+      <Buildings count={40} />
+      <Trees count={100} />
+      <Bushes count={200} />
+      <Sidewalks />
+    </group>
+  );
 } 

@@ -1,293 +1,270 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { GameState, WeaponConfig, DroneType } from './types';
+import { CollisionManager } from './components/collision/CollisionManager';
 import * as THREE from 'three';
-import { DroneType, Weather, WeaponConfig, Mission } from './types';
 
-interface LeaderboardEntry {
-  name: string;
-  score: number;
-}
+const defaultWeapon: WeaponConfig = {
+  type: 'standard',
+  damage: 100,
+  accuracy: 0.95,
+  recoil: 0.2,
+  zoomLevels: [2, 4, 8, 16],
+  ammoCapacity: 10,
+  bulletDrop: 0.1,
+  windAffect: 0.05,
+};
 
 interface Achievement {
   id: string;
   title: string;
   description: string;
-  icon: string;
-  type: 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
-  total?: number;
+  threshold: number;
+  unlocked: boolean;
 }
 
-interface GameStore {
-  playerName: string;
-  isLoggedIn: boolean;
-  score: number;
-  leaderboard: LeaderboardEntry[];
-  activeDrones: DroneType[];
-  weather: Weather;
-  // Weapon state
-  ammo: number;
+const achievements: Achievement[] = [
+  {
+    id: 'first_blood',
+    title: 'First Blood',
+    description: 'Shoot down your first drone',
+    threshold: 1,
+    unlocked: false
+  },
+  {
+    id: 'sharp_shooter',
+    title: 'Sharp Shooter',
+    description: 'Destroy 10 drones',
+    threshold: 10,
+    unlocked: false
+  },
+  {
+    id: 'drone_hunter',
+    title: 'Drone Hunter',
+    description: 'Destroy 25 drones',
+    threshold: 25,
+    unlocked: false
+  },
+  {
+    id: 'master_hunter',
+    title: 'Master Hunter',
+    description: 'Destroy 50 drones',
+    threshold: 50,
+    unlocked: false
+  },
+  {
+    id: 'legendary',
+    title: 'Legendary',
+    description: 'Destroy 100 drones',
+    threshold: 100,
+    unlocked: false
+  }
+];
+
+interface MissionObjective {
+  id: string;
+  type: 'eliminate' | 'protect';
+  count?: number;
+  timeLimit?: number;
+  completed: boolean;
+}
+
+interface Mission {
+  id: string;
+  name: string;
+  objectives: MissionObjective[];
+  timeLimit?: number;
+}
+
+interface GameStore extends GameState {
+  collisionManager: CollisionManager | null;
   isReloading: boolean;
   reloadProgress: number;
-  activeWeapon: WeaponConfig;
   totalDronesDestroyed: number;
-  // Achievement state
+  achievements: Achievement[];
   showAchievement: boolean;
   latestAchievement: Achievement | null;
-  unlockedAchievements: string[];
-  // Mission state
   currentMission: Mission | null;
-  gameTime: number;
-  // Score management
-  updateScore: (amount: number) => void;
-  // Actions
-  setPlayerName: (name: string) => void;
-  setIsLoggedIn: (value: boolean) => void;
-  incrementScore: (amount: number) => void;
-  updateLeaderboard: (entries: LeaderboardEntry[]) => void;
-  addScoreToLeaderboard: () => void;
-  resetScore: () => void;
-  cameraPosition: THREE.Vector3;
-  cameraRotation: THREE.Euler;
-  setCameraPosition: (position: THREE.Vector3) => void;
-  setCameraRotation: (rotation: THREE.Euler) => void;
-  isInitialized: boolean;
+  
   initGame: () => void;
-  // Drone management
-  spawnDrone: (drone: DroneType) => void;
+  updateScore: (points: number) => void;
   shootDrone: (droneId: string) => void;
-  removeDrone: (droneId: string) => void;
-  // Weather management
-  updateWeather: (weather: Partial<Weather>) => void;
-  // Weapon management
+  spawnDrone: (drone: DroneType) => void;
+  updateWeather: () => void;
   startReload: () => void;
   finishReload: () => void;
-  useAmmo: () => void;
-  setReloadProgress: (progress: number) => void;
-  // Achievement management
-  unlockAchievement: (achievement: Achievement) => void;
+  setCollisionManager: (scene: THREE.Scene) => void;
+  checkAchievements: () => void;
   hideAchievement: () => void;
-  // Mission management
-  startMission: (mission: Mission) => void;
-  completeMission: () => void;
-  updateGameTime: (time: number) => void;
+  useAmmo: () => void;
 }
 
-const DEFAULT_WEAPON: WeaponConfig = {
-  type: 'standard',
-  damage: 100,
-  accuracy: 0.9,
-  recoil: 0.3,
-  zoomLevels: [1, 2, 4],
-  ammoCapacity: 10,
-  bulletDrop: 0.1,
-  windAffect: 0.2
-};
+export const useGameStore = create<GameStore>((set, get) => ({
+  score: 0,
+  ammo: defaultWeapon.ammoCapacity,
+  activeWeapon: defaultWeapon,
+  activeDrones: [],
+  weather: {
+    windSpeed: 0,
+    windDirection: 0,
+    visibility: 1000,
+    precipitation: 'none'
+  },
+  gameTime: 0,
+  difficulty: 1,
+  isReloading: false,
+  reloadProgress: 0,
+  collisionManager: null,
+  totalDronesDestroyed: 0,
+  achievements: [...achievements],
+  showAchievement: false,
+  latestAchievement: null,
+  currentMission: null,
 
-export const useGameStore = create<GameStore>()(
-  persist(
-    (set, get) => ({
-      playerName: '',
-      isLoggedIn: false,
-      score: 0,
-      leaderboard: [],
-      isInitialized: false,
-      cameraPosition: new THREE.Vector3(0, 5, 10),
-      cameraRotation: new THREE.Euler(0, 0, 0),
-      activeDrones: [],
-      weather: {
-        windSpeed: 0,
-        windDirection: 0,
-        visibility: 1000,
-        precipitation: 'none'
-      },
-      // Weapon state
-      ammo: 10,
-      isReloading: false,
-      reloadProgress: 0,
-      activeWeapon: DEFAULT_WEAPON,
-      totalDronesDestroyed: 0,
-      // Achievement state
-      showAchievement: false,
-      latestAchievement: null,
-      unlockedAchievements: [],
-      // Mission state
-      currentMission: null,
-      gameTime: 0,
-      // Score management
-      updateScore: (amount) => {
-        set((state) => ({
-          score: state.score + amount
-        }));
-      },
-
-      setPlayerName: (name) => set({ playerName: name }),
-      setIsLoggedIn: (value) => set({ isLoggedIn: value }),
-      incrementScore: (amount) => set((state) => ({ score: state.score + amount })),
-      updateLeaderboard: (entries) => {
-        set({ leaderboard: entries.sort((a, b) => b.score - a.score) });
-      },
-      addScoreToLeaderboard: () => {
-        const { playerName, score, leaderboard } = get();
-        if (!playerName || score === 0) return;
-
-        const newLeaderboard = [...leaderboard];
-        const existingEntry = newLeaderboard.find(entry => entry.name === playerName);
-
-        if (existingEntry) {
-          if (score > existingEntry.score) {
-            existingEntry.score = score;
-          }
-        } else {
-          newLeaderboard.push({ name: playerName, score });
+  initGame: () => set({
+    score: 0,
+    ammo: defaultWeapon.ammoCapacity,
+    activeWeapon: defaultWeapon,
+    activeDrones: [],
+    weather: {
+      windSpeed: Math.random() * 10,
+      windDirection: Math.random() * 360,
+      visibility: 0.8 + Math.random() * 0.2,
+      precipitation: 'none'
+    },
+    gameTime: 0,
+    difficulty: 1,
+    isReloading: false,
+    reloadProgress: 0,
+    totalDronesDestroyed: 0,
+    achievements: achievements.map(a => ({ ...a, unlocked: false })),
+    showAchievement: false,
+    latestAchievement: null,
+    currentMission: {
+      id: 'mission-1',
+      name: 'First Strike',
+      objectives: [
+        {
+          id: 'obj-1',
+          type: 'eliminate',
+          count: 5,
+          completed: false
         }
+      ],
+      timeLimit: 300
+    },
+  }),
 
-        newLeaderboard.sort((a, b) => b.score - a.score);
-        set({ leaderboard: newLeaderboard });
-      },
-      resetScore: () => set({ score: 0 }),
-      setCameraPosition: (position) => set({ cameraPosition: position }),
-      setCameraRotation: (rotation) => set({ cameraRotation: rotation }),
+  updateScore: (points) => set((state) => ({
+    score: state.score + 1, // Always add 1 point per drone
+  })),
 
-      initGame: () => {
-        if (get().isInitialized) return;
-        set({
-          score: 0,
-          isInitialized: true,
-          cameraPosition: new THREE.Vector3(0, 5, 10),
-          cameraRotation: new THREE.Euler(0, 0, 0),
-          activeDrones: [],
-          weather: {
-            windSpeed: 0,
-            windDirection: 0,
-            visibility: 1000,
-            precipitation: 'none'
-          },
-          ammo: 10,
-          isReloading: false,
-          reloadProgress: 0,
-          totalDronesDestroyed: 0,
-          showAchievement: false,
-          latestAchievement: null,
-          currentMission: null,
-          gameTime: 0
-        });
-      },
+  shootDrone: (droneId: string) => {
+    const state = get();
+    const drone = state.activeDrones.find(d => d.id === droneId);
+    if (!drone) return;
 
-      // Drone management functions
-      spawnDrone: (drone) => {
-        set((state) => ({
-          activeDrones: [...state.activeDrones, drone]
-        }));
-      },
-
-      shootDrone: (droneId) => {
-        set((state) => {
-          const droneIndex = state.activeDrones.findIndex(d => d.id === droneId);
-          if (droneIndex === -1) return state;
-
-          const drone = state.activeDrones[droneIndex];
-          const newScore = state.score + drone.value;
-          const newTotalDronesDestroyed = state.totalDronesDestroyed + 1;
-
-          const newDrones = [...state.activeDrones];
-          newDrones.splice(droneIndex, 1);
-
-          return {
-            activeDrones: newDrones,
-            score: newScore,
-            totalDronesDestroyed: newTotalDronesDestroyed
-          };
-        });
-      },
-
-      removeDrone: (droneId) => {
-        set((state) => ({
-          activeDrones: state.activeDrones.filter(d => d.id !== droneId)
-        }));
-      },
-
-      // Weather management
-      updateWeather: (weatherUpdate) => {
-        set((state) => ({
-          weather: { ...state.weather, ...weatherUpdate }
-        }));
-      },
-
-      // Weapon management
-      startReload: () => {
-        set({ isReloading: true, reloadProgress: 0 });
-      },
-
-      finishReload: () => {
-        const { activeWeapon } = get();
-        set({ 
-          isReloading: false, 
-          reloadProgress: 0,
-          ammo: activeWeapon.ammoCapacity 
-        });
-      },
-
-      useAmmo: () => {
-        set((state) => ({
-          ammo: Math.max(0, state.ammo - 1)
-        }));
-      },
-
-      setReloadProgress: (progress) => {
-        set({ reloadProgress: progress });
-      },
-
-      // Achievement management
-      unlockAchievement: (achievement) => {
-        const { unlockedAchievements } = get();
-        if (!unlockedAchievements.includes(achievement.id)) {
-          set((state) => ({
-            showAchievement: true,
-            latestAchievement: achievement,
-            unlockedAchievements: [...state.unlockedAchievements, achievement.id]
-          }));
-
-          // Hide achievement after 3 seconds
+    // Remove the drone and update score/stats
+    set((state) => {
+      const newTotalDrones = state.totalDronesDestroyed + 1;
+      
+      // Check for achievements before updating state
+      const newAchievements = state.achievements.map(achievement => {
+        if (!achievement.unlocked && newTotalDrones >= achievement.threshold) {
+          // Show achievement notification
           setTimeout(() => {
-            get().hideAchievement();
-          }, 3000);
+            set(state => ({
+              showAchievement: true,
+              latestAchievement: achievement
+            }));
+            
+            // Hide achievement after 3 seconds
+            setTimeout(() => {
+              set({ showAchievement: false });
+            }, 3000);
+          }, 0);
+          
+          return { ...achievement, unlocked: true };
         }
-      },
+        return achievement;
+      });
 
-      hideAchievement: () => {
-        set({
-          showAchievement: false,
-          latestAchievement: null
-        });
-      },
+      return {
+        activeDrones: state.activeDrones.filter(d => d.id !== droneId),
+        score: state.score + 1,
+        totalDronesDestroyed: newTotalDrones,
+        achievements: newAchievements
+      };
+    });
+  },
 
-      // Mission management
-      startMission: (mission) => {
-        set({
-          currentMission: mission,
-          gameTime: 0
-        });
-      },
+  useAmmo: () => set(state => {
+    if (state.ammo <= 0) return state;
+    return { ammo: state.ammo - 1 };
+  }),
 
-      completeMission: () => {
-        set({
-          currentMission: null,
-          gameTime: 0
-        });
-      },
-
-      updateGameTime: (time) => {
-        set({ gameTime: time });
+  startReload: () => {
+    if (get().isReloading) return;
+    
+    set({ isReloading: true, reloadProgress: 0 });
+    
+    // Animate reload progress
+    const startTime = Date.now();
+    const reloadDuration = 2000; // 2 seconds
+    
+    const updateProgress = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(1, elapsed / reloadDuration);
+      
+      set({ reloadProgress: progress });
+      
+      if (progress < 1) {
+        requestAnimationFrame(updateProgress);
+      } else {
+        get().finishReload();
       }
-    }),
-    {
-      name: 'game-store',
-      partialize: (state) => ({
-        leaderboard: state.leaderboard,
-        playerName: state.playerName,
-        isLoggedIn: state.isLoggedIn,
-        unlockedAchievements: state.unlockedAchievements
-      }),
-    }
-  )
-);
+    };
+    
+    requestAnimationFrame(updateProgress);
+  },
+
+  finishReload: () => set((state) => ({
+    isReloading: false,
+    reloadProgress: 0,
+    ammo: state.activeWeapon.ammoCapacity,
+  })),
+
+  setCollisionManager: (scene: THREE.Scene) => set({
+    collisionManager: new CollisionManager(scene)
+  }),
+
+  spawnDrone: (drone) => set((state) => ({
+    activeDrones: [...state.activeDrones, drone],
+  })),
+
+  updateWeather: () => set((state) => ({
+    weather: {
+      windSpeed: Math.random() * 10,
+      windDirection: (state.weather.windDirection + Math.random() * 20 - 10) % 360,
+      visibility: Math.max(0.5, Math.min(1, state.weather.visibility + (Math.random() * 0.2 - 0.1))),
+      precipitation: 'none'
+    },
+  })),
+
+  checkAchievements: () => {
+    const state = get();
+    const newAchievements = state.achievements.map(achievement => {
+      if (!achievement.unlocked && state.totalDronesDestroyed >= achievement.threshold) {
+        set({
+          showAchievement: true,
+          latestAchievement: achievement
+        });
+        return { ...achievement, unlocked: true };
+      }
+      return achievement;
+    });
+
+    set({ achievements: newAchievements });
+  },
+
+  hideAchievement: () => set({ showAchievement: false }),
+}));
