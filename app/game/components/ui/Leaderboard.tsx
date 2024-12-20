@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useGameStore } from '../../store';
 
 interface LeaderboardEntry {
@@ -9,15 +9,19 @@ interface LeaderboardEntry {
 }
 
 export function Leaderboard() {
+  const [mounted, setMounted] = useState(false);
   const { leaderboard, updateLeaderboard } = useGameStore();
 
   useEffect(() => {
+    setMounted(true);
     // Load leaderboard from localStorage on mount
     const savedLeaderboard = localStorage.getItem('gameLeaderboard');
     if (savedLeaderboard) {
       updateLeaderboard(JSON.parse(savedLeaderboard));
     }
   }, [updateLeaderboard]);
+
+  if (!mounted) return null;
 
   return (
     <div className="absolute top-4 right-4 bg-gray-800 bg-opacity-90 p-4 rounded-lg shadow-xl">

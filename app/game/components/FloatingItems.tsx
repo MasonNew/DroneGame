@@ -15,9 +15,15 @@ interface FloatingItem {
 
 export function FloatingItems() {
   const [items, setItems] = useState<FloatingItem[]>([]);
+  const [isClient, setIsClient] = useState(false);
   const textureRef = useRef<THREE.Texture | null>(null);
   const glowMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   const itemsRef = useRef<FloatingItem[]>([]);
+
+  // Check if we're on the client
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Create items function
   const createItems = useCallback((count: number) => {
@@ -71,9 +77,10 @@ export function FloatingItems() {
     });
   }, []);
 
-  // Initialize items and load texture
+  // Initialize items and create texture
   useEffect(() => {
-    const textureLoader = new THREE.TextureLoader();
+    if (!isClient) return;
+
     const newItems = createItems(8);
     setItems(newItems);
     itemsRef.current = newItems;
@@ -81,17 +88,14 @@ export function FloatingItems() {
     const glowMaterial = createGlowMaterial();
     glowMaterialRef.current = glowMaterial;
 
-    // Create a default texture for fallback
-    const canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#00ffff';
-      ctx.fillRect(0, 0, 64, 64);
-      const defaultTexture = new THREE.CanvasTexture(canvas);
-      textureRef.current = defaultTexture;
-    }
+    // Create a simple colored texture
+    const texture = new THREE.DataTexture(
+      new Uint8Array([0, 255, 255, 255]), // RGBA for cyan
+      1, 1, // width, height
+      THREE.RGBAFormat
+    );
+    texture.needsUpdate = true;
+    textureRef.current = texture;
 
     return () => {
       if (textureRef.current) {
@@ -101,7 +105,7 @@ export function FloatingItems() {
         glowMaterialRef.current.dispose();
       }
     };
-  }, [createItems, createGlowMaterial]);
+  }, [isClient, createItems, createGlowMaterial]);
 
   // Update function for animation
   const updateItems = useCallback((delta: number) => {
@@ -124,19 +128,7 @@ export function FloatingItems() {
     }
   });
 
-  // Memoize instance positions
-  const instancePositions = useMemo(() => {
-    const array = new Float32Array(items.length * 3);
-    items.forEach((item, i) => {
-      const i3 = i * 3;
-      array[i3] = item.position.x;
-      array[i3 + 1] = item.position.y;
-      array[i3 + 2] = item.position.z;
-    });
-    return array;
-  }, [items]);
-
-  if (!textureRef.current || !glowMaterialRef.current) return null;
+  if (!isClient || !textureRef.current || !glowMaterialRef.current) return null;
 
   return (
     <group>
@@ -150,16 +142,6 @@ export function FloatingItems() {
           ]}
           rotation={[0, item.phase * item.rotationSpeed, 0]}
         >
-          <sprite scale={[4, 4, 4]}>
-            <spriteMaterial
-              map={textureRef.current}
-              transparent={true}
-              opacity={0.8}
-              depthWrite={false}
-              sizeAttenuation={true}
-            />
-          </sprite>
-
           <mesh>
             <sphereGeometry args={[2.5, 16, 16]} />
             <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={0.5} transparent opacity={0.3} />

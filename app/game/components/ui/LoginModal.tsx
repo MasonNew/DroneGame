@@ -1,11 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '../../store';
 
 export function LoginModal() {
   const [username, setUsername] = useState('');
+  const [mounted, setMounted] = useState(false);
   const { setPlayerName, isLoggedIn, setIsLoggedIn } = useGameStore();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,7 +20,7 @@ export function LoginModal() {
     }
   };
 
-  if (isLoggedIn) return null;
+  if (!mounted || isLoggedIn) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
