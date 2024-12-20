@@ -74,18 +74,24 @@ export function FloatingItems() {
   // Initialize items and load texture
   useEffect(() => {
     const textureLoader = new THREE.TextureLoader();
-    textureLoader.load('/pump.fun.png', (texture) => {
-      texture.minFilter = THREE.LinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      textureRef.current = texture;
-      
-      const newItems = createItems(8);
-      setItems(newItems);
-      itemsRef.current = newItems;
-    });
+    const newItems = createItems(8);
+    setItems(newItems);
+    itemsRef.current = newItems;
 
     const glowMaterial = createGlowMaterial();
     glowMaterialRef.current = glowMaterial;
+
+    // Create a default texture for fallback
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#00ffff';
+      ctx.fillRect(0, 0, 64, 64);
+      const defaultTexture = new THREE.CanvasTexture(canvas);
+      textureRef.current = defaultTexture;
+    }
 
     return () => {
       if (textureRef.current) {
