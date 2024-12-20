@@ -1,42 +1,48 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-import { GameStoreProvider } from './components/GameStoreProvider';
-import { BrandOverlay } from './components/ui/BrandOverlay';
+import { Canvas } from '@react-three/fiber';
+import { GameEnvironment } from './components/Environment/GameEnvironment';
+import { GameUI } from './components/GameUI';
+import { LoginModal } from './components/ui/LoginModal';
+import { Leaderboard } from './components/ui/Leaderboard';
 import { useGameStore } from './store';
-
-const DynamicLoginModal = dynamic(() => import('./components/ui/LoginModal').then(mod => mod.LoginModal), {
-  ssr: false,
-  loading: () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="text-white text-xl">Loading...</div>
-    </div>
-  )
-});
-
-const DynamicLeaderboard = dynamic(() => import('./components/ui/Leaderboard').then(mod => mod.Leaderboard), {
-  ssr: false
-});
-
-const DynamicClientWrapper = dynamic(() => import('./components/ClientWrapper').then(mod => mod.ClientWrapper), {
-  ssr: false,
-  loading: () => (
-    <div className="w-screen h-screen flex items-center justify-center bg-gray-900">
-      <div className="text-white text-xl">Loading game environment...</div>
-    </div>
-  )
-});
+import { PlayerController } from './components/PlayerController';
+import { Weapon } from './components/Weapon';
+import { Scope } from './components/Scope';
+import { GameTooltip } from './components/GameTooltip';
 
 export default function GamePage() {
-  const { isLoggedIn } = useGameStore();
+  const isLoggedIn = useGameStore((state) => state.isLoggedIn);
 
   return (
-    <GameStoreProvider>
-      <DynamicClientWrapper>
-        {!isLoggedIn && <DynamicLoginModal />}
-        {isLoggedIn && <DynamicLeaderboard />}
-        <BrandOverlay />
-      </DynamicClientWrapper>
-    </GameStoreProvider>
+    <main className="w-screen h-screen relative">
+      <Canvas shadows>
+        <ambientLight intensity={0.5} />
+        <directionalLight
+          position={[50, 50, 25]}
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-camera-far={100}
+          shadow-camera-left={-50}
+          shadow-camera-right={50}
+          shadow-camera-top={50}
+          shadow-camera-bottom={-50}
+        />
+        <GameEnvironment />
+        {isLoggedIn && (
+          <>
+            <PlayerController />
+            <Weapon />
+            <Scope />
+          </>
+        )}
+      </Canvas>
+      
+      <GameUI />
+      <GameTooltip />
+      <Leaderboard />
+      <LoginModal />
+    </main>
   );
 }

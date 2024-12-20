@@ -3,16 +3,33 @@
 import { useEffect, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useGameStore } from '../store';
 
 export function PlayerController() {
   const { camera } = useThree();
   const moveSpeed = 0.3;
   const velocity = useRef(new THREE.Vector3());
   const moveDirection = useRef(new THREE.Vector3());
+  const isPointerLocked = useRef(false);
 
   useEffect(() => {
     // Initialize camera position
     camera.position.set(0, 2, 5);
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isPointerLocked.current) return;
+
+      const movementX = e.movementX || 0;
+      const movementY = e.movementY || 0;
+      const sensitivity = 0.002;
+
+      // Rotate camera based on mouse movement
+      camera.rotation.y -= movementX * sensitivity;
+      camera.rotation.x = Math.max(
+        -Math.PI / 2,
+        Math.min(Math.PI / 2, camera.rotation.x - movementY * sensitivity)
+      );
+    };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.code) {
@@ -56,12 +73,32 @@ export function PlayerController() {
       }
     };
 
+    const handlePointerLockChange = () => {
+      isPointerLocked.current = document.pointerLockElement === document.body;
+    };
+
+    const handleCanvasClick = () => {
+      if (!isPointerLocked.current) {
+        document.body.requestPointerLock();
+      }
+    };
+
+    // Add event listeners
+    window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    document.addEventListener('pointerlockchange', handlePointerLockChange);
+    document.addEventListener('click', handleCanvasClick);
 
     return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      document.removeEventListener('pointerlockchange', handlePointerLockChange);
+      document.removeEventListener('click', handleCanvasClick);
+      if (document.exitPointerLock) {
+        document.exitPointerLock();
+      }
     };
   }, [camera]);
 
