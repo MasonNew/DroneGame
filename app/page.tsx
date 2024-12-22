@@ -16,11 +16,11 @@ export default function Home() {
           </div>
           
           <h1 className="text-7xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
-            SOL Drone Killer
+            SOL Drone Killa
           </h1>
           
           <p className="text-2xl text-purple-200 max-w-2xl mx-auto leading-relaxed">
-            Take control of the skies. Eliminate rogue drones with precision and skill in the Solana blockchain's most thrilling combat game.
+            Take control of the skies. Eliminate rogue drones with precision and skill in the Solana blockchain&apos;s most thrilling combat game.
           </p>
 
           <div className="flex items-center justify-center gap-6 pt-4">
