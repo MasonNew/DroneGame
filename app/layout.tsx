@@ -5,7 +5,7 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Drone Buster',
+  title: 'SOL Drone Killer',
   description: 'Take aim and shoot down those pesky TikTok drones in this action-packed game!',
   icons: {
     icon: '/crosshair.png',

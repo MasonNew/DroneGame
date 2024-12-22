@@ -4,21 +4,24 @@
 
 @layer components {
   .cyber-text {
-    @apply font-mono text-2xl font-bold uppercase tracking-widest text-cyan-400 relative;
-    animation: glitch 3s infinite, glow 2s infinite;
+    @apply font-mono font-bold uppercase tracking-widest text-transparent bg-clip-text relative;
+    background-image: linear-gradient(to right, #9333ea, #ec4899);
+    animation: glow 2s infinite;
   }
 
   .cyber-text::before {
-    @apply absolute inset-0 text-fuchsia-400;
-    content: '$BUST';
+    @apply absolute inset-0 text-transparent bg-clip-text;
+    background-image: linear-gradient(to right, #ec4899, #9333ea);
+    content: 'KILLA';
     animation: glitch 3s infinite reverse;
     clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
     transform: translate(-2px);
   }
 
   .cyber-text::after {
-    @apply absolute inset-0 text-yellow-400;
-    content: '$BUST';
+    @apply absolute inset-0 text-transparent bg-clip-text;
+    background-image: linear-gradient(to right, #9333ea, #ec4899);
+    content: 'KILLA';
     animation: glitch 3s infinite;
     clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
     transform: translate(2px);
@@ -54,13 +57,13 @@
 
 @keyframes glow {
   0% {
-    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    filter: drop-shadow(0 0 20px rgba(147, 51, 234, 0.5));
   }
   50% {
-    text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+    filter: drop-shadow(0 0 40px rgba(236, 72, 153, 0.8));
   }
   100% {
-    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    filter: drop-shadow(0 0 20px rgba(147, 51, 234, 0.5));
   }
 }
 
